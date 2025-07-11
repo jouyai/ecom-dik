@@ -1,0 +1,88 @@
+import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { auth, db } from "@/lib/firebase"
+import { doc, getDoc } from "firebase/firestore"
+import { useAuth } from "@/context/auth"
+import { toast } from "sonner"
+import { FirebaseError } from "firebase/app"
+
+export default function Login() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+  const { setUser } = useAuth()
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const uid = userCredential.user.uid
+
+      const userDoc = await getDoc(doc(db, "users", uid))
+      if (!userDoc.exists()) throw new Error("User tidak ditemukan di database.")
+
+      const { role, username } = userDoc.data()
+      setUser(email, username, role)
+
+      toast.success("Login berhasil!")
+      navigate("/")
+    } catch (err) {
+      let errorMessage = "Terjadi kesalahan saat login."
+
+      if (err instanceof FirebaseError) {
+        switch (err.code) {
+          case "auth/invalid-credential":
+          case "auth/user-not-found":
+            errorMessage = "Akun tidak ditemukan."
+            break
+          case "auth/wrong-password":
+            errorMessage = "Password salah."
+            break
+          case "auth/invalid-email":
+            errorMessage = "Format email tidak valid."
+            break
+          case "auth/too-many-requests":
+            errorMessage = "Terlalu banyak percobaan. Coba lagi nanti."
+            break
+          default:
+            errorMessage = "Login gagal: " + err.message
+        }
+      }
+
+      toast.error(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="max-w-md mx-auto mt-10 p-6 border rounded-xl shadow space-y-4">
+      <h1 className="text-2xl font-bold text-center">Login Akun</h1>
+      <form onSubmit={handleLogin} className="space-y-4">
+        <Input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <Input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Memproses..." : "Login"}
+        </Button>
+      </form>
+    </div>
+  )
+}
