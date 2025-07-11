@@ -12,6 +12,7 @@ import Payment from "@/pages/Payment";
 import OrderSummary from "@/pages/OrderSummary";
 import MyOrders from "@/pages/MyOrders";
 import Thanks from "@/pages/Thanks";
+import Footer from "@/components/Footer";
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -42,6 +43,7 @@ export default function AppRoutes() {
           <Route path="/thanks" element={<Thanks />} />
         </Route>
       </Routes>
+      <Footer />
     </>
   );
 }
