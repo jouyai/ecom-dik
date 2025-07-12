@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -15,35 +15,39 @@ import Thanks from "@/pages/Thanks";
 import Footer from "@/components/Footer";
 
 export default function AppRoutes() {
-  const location = useLocation();
-  const hideNavbar = ["/login", "/register"].includes(location.pathname);
-
   return (
     <>
-      {!hideNavbar && <Navbar />}
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
+      <Navbar />
 
-        {/* Protected Route - Admin Only */}
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Route>
+      <div className="flex flex-col min-h-screen">
+        <main className="flex-grow">
 
-        {/* Protected Route - Buyer Only */}
-        <Route element={<ProtectedRoute allowedRoles={["buyer"]} />}>
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/shipping" element={<Shipping />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/order-summary/:orderId" element={<OrderSummary />} />
-          <Route path="/orders" element={<MyOrders />} />
-          <Route path="/thanks" element={<Thanks />} />
-        </Route>
-      </Routes>
-      <Footer />
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
+
+            {/* Protected Route - Admin Only */}
+            <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+            </Route>
+
+            {/* Protected Route - Buyer Only */}
+            <Route element={<ProtectedRoute allowedRoles={["buyer"]} />}>
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/shipping" element={<Shipping />} />
+              <Route path="/payment" element={<Payment />} />
+              <Route path="/order-summary/:orderId" element={<OrderSummary />} />
+              <Route path="/orders" element={<MyOrders />} />
+              <Route path="/thanks" element={<Thanks />} />
+            </Route>
+          </Routes>
+        </main>
+
+        <Footer />
+      </div>
     </>
   );
 }

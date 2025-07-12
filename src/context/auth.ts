@@ -25,8 +25,21 @@ export const useAuth = create<AuthState>((set) => ({
     set({ user: { email, username, role }, loading: false }),
   logout: () => {
     auth.signOut()
+
+    // Remove Tawk script
+    const tawkScript = document.getElementById("tawk-script")
+    if (tawkScript) {
+      tawkScript.remove()
+    }
+
+    // Hapus bubble iframe-nya juga
+    const iframe = document.querySelector("iframe[src*='tawk']")
+    if (iframe && iframe.parentNode) {
+      iframe.parentNode.removeChild(iframe)
+    }
+
     set({ user: null, loading: false })
-  },
+  }
 }))
 
 // Listen perubahan auth dari Firebase

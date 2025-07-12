@@ -8,6 +8,7 @@ import { doc, getDoc } from "firebase/firestore"
 import { useAuth } from "@/context/auth"
 import { toast } from "sonner"
 import { FirebaseError } from "firebase/app"
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -63,7 +64,7 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 border rounded-xl shadow space-y-4">
-      <h1 className="text-2xl font-bold text-center">Login Akun</h1>
+      <h1 className="text-2xl font-bold text-center">Masuk Akun</h1>
       <form onSubmit={handleLogin} className="space-y-4">
         <Input
           type="email"
@@ -82,6 +83,12 @@ export default function Login() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Memproses..." : "Login"}
         </Button>
+        <p className="text-sm text-center text-gray-600">
+          Belum punya akun?{" "}
+          <Link to="/register" className="text-green-600 hover:hide">
+            Daftar di sini
+          </Link>
+        </p>
       </form>
     </div>
   )

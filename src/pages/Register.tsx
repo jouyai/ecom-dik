@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { auth, db } from "@/lib/firebase"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
@@ -11,7 +11,6 @@ export default function Register() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [username, setUsername] = useState("")
-  const [role, setRole] = useState<"admin" | "buyer">("buyer")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -25,7 +24,7 @@ export default function Register() {
       await setDoc(doc(db, "users", uid), {
         email,
         username,
-        role,
+        role: "buyer",
       })
 
       toast.success("Registrasi berhasil!")
@@ -39,7 +38,7 @@ export default function Register() {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 border rounded-xl shadow space-y-4">
-      <h1 className="text-2xl font-bold text-center">Register Akun</h1>
+      <h1 className="text-2xl font-bold text-center">Daftar Akun</h1>
       <form onSubmit={handleRegister} className="space-y-4">
         <Input
           placeholder="Username"
@@ -61,17 +60,15 @@ export default function Register() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <select
-          className="w-full border rounded p-2"
-          value={role}
-          onChange={(e) => setRole(e.target.value as "admin" | "buyer")}
-        >
-          <option value="buyer">Pembeli</option>
-          <option value="admin">Admin</option>
-        </select>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Mendaftarkan..." : "Register"}
         </Button>
+        <p className="text-sm text-center text-gray-600">
+          Sudah punya akun?{" "}
+          <Link to="/login" className="text-green-600 hover:hide">
+            Login di sini
+          </Link>
+        </p>
       </form>
     </div>
   )

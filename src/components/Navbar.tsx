@@ -54,7 +54,7 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow px-4 py-3 flex justify-between items-center">
       <Link to="/" className="text-xl font-bold text-green-600">
-        DikaCommerce
+        Furniture.go
       </Link>
 
       {/* Desktop */}
@@ -78,7 +78,7 @@ export default function Navbar() {
           </Button>
         ) : (
           <>
-            <Link to="/login"><Button size="sm" variant="outline">Login</Button></Link>
+            <Link to="/login"><Button size="sm" variant="outline">Masuk</Button></Link>
             <Link to="/register"><Button size="sm">Daftar</Button></Link>
           </>
         )}
@@ -111,7 +111,7 @@ export default function Navbar() {
                 </Button>
               ) : (
                 <>
-                  <Link to="/login"><Button variant="outline" className="w-full">Login</Button></Link>
+                  <Link to="/login"><Button variant="outline" className="w-full">Masuk</Button></Link>
                   <Link to="/register"><Button className="w-full">Daftar</Button></Link>
                 </>
               )}
