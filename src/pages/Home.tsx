@@ -4,6 +4,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Product {
   id: string;
@@ -18,11 +19,13 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       const snapshot = await getDocs(collection(db, "products"));
       const data = snapshot.docs.map(
         (doc) =>
@@ -35,6 +38,7 @@ export default function Home() {
 
       const uniqueCategories = Array.from(new Set(data.map((p) => p.category)));
       setCategories(uniqueCategories);
+      setLoading(false);
     };
 
     fetchProducts();
@@ -78,31 +82,45 @@ export default function Home() {
 
       {/* Produk */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="hover:shadow-lg transition">
-            <CardContent className="p-4 space-y-3">
-              {product.image && (
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-48 object-contain rounded bg-white"
-                />
-              )}
-              <h2 className="text-xl font-semibold">{product.name}</h2>
-              <p className="text-sm text-gray-500">{product.category}</p>
-              <p className="text-lg font-bold text-green-600">
-                Rp {product.price.toLocaleString()}
-              </p>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                Lihat Detail
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="hover:shadow-lg transition">
+              <div className="p-4 space-y-3">
+                <Skeleton className="w-full h-48" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          ))
+        ) : (
+          filteredProducts.map((product) => (
+            <Card key={product.id} className="hover:shadow-lg transition">
+              <CardContent className="p-4 space-y-3">
+                {product.image && (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-48 object-contain rounded bg-white"
+                  />
+                )}
+                <h2 className="text-xl font-semibold">{product.name}</h2>
+                <p className="text-sm text-gray-500">{product.category}</p>
+                <p className="text-lg font-bold text-green-600">
+                  Rp {product.price.toLocaleString()}
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  Lihat Detail
+                </Button>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   );
