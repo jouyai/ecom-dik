@@ -6,53 +6,46 @@ import { doc, getDoc } from "firebase/firestore"
 type Role = "admin" | "buyer" | null
 
 interface User {
-  displayName: string
-  email: string
-  username: string
-  role: Role
+  displayName: string;
+  email: string;
+  username: string;
+  role: Role;
 }
 
 interface AuthState {
-  user: User | null
-  loading: boolean
-  setUser: (email: string, username: string, role: Role) => void
-  logout: () => void
+  user: User | null;
+  loading: boolean;
+  setUser: (email: string, username: string, role: Role, displayName: string) => void;
+  logout: () => void;
 }
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   loading: true,
-  setUser: (email, username, role) =>
-    set({ user: { email, username, role }, loading: false }),
+  setUser: (email, username, role, displayName) =>
+    set({ user: { email, username, role, displayName }, loading: false }),
   logout: () => {
-    auth.signOut()
-
-    // Remove Tawk script
-    const tawkScript = document.getElementById("tawk-script")
-    if (tawkScript) {
-      tawkScript.remove()
-    }
-
-    // Hapus bubble iframe-nya juga
-    const iframe = document.querySelector("iframe[src*='tawk']")
-    if (iframe && iframe.parentNode) {
-      iframe.parentNode.removeChild(iframe)
-    }
-
-    set({ user: null, loading: false })
+    auth.signOut();
+    document.getElementById("tawk-script")?.remove();
+    const iframe = document.querySelector("iframe[src*='tawk']");
+    if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
+    set({ user: null, loading: false });
   }
-}))
+}));
 
-// Listen perubahan auth dari Firebase
 onAuthStateChanged(auth, async (firebaseUser) => {
   if (firebaseUser) {
-    const ref = doc(db, "users", firebaseUser.uid)
-    const snap = await getDoc(ref)
+    const ref = doc(db, "users", firebaseUser.uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : { role: "buyer", username: "Unknown" };
 
-    const data = snap.exists() ? snap.data() : { role: "buyer", username: "Unknown" }
-
-    useAuth.getState().setUser(firebaseUser.email!, data.username, data.role)
+    useAuth.getState().setUser(
+      firebaseUser.email!,
+      data.username,
+      data.role,
+      firebaseUser.displayName || "Guest"
+    );
   } else {
-    useAuth.setState({ user: null, loading: false })
+    useAuth.setState({ user: null, loading: false });
   }
-})
+});
