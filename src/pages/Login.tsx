@@ -1,14 +1,13 @@
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth, db } from "@/lib/firebase"
 import { doc, getDoc } from "firebase/firestore"
 import { useAuth } from "@/context/auth"
 import { toast } from "sonner"
 import { FirebaseError } from "firebase/app"
-import { Link } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -23,13 +22,16 @@ export default function Login() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const uid = userCredential.user.uid
+      const user = userCredential.user
+      const uid = user.uid
 
       const userDoc = await getDoc(doc(db, "users", uid))
       if (!userDoc.exists()) throw new Error("User tidak ditemukan di database.")
 
       const { role, username } = userDoc.data()
-      setUser(email, username, role)
+      const displayName = user.displayName || "Guest"
+
+      setUser(email, username, role, displayName)
 
       toast.success("Login berhasil!")
       navigate("/")
@@ -85,7 +87,7 @@ export default function Login() {
         </Button>
         <p className="text-sm text-center text-gray-600">
           Belum punya akun?{" "}
-          <Link to="/register" className="text-green-600 hover:hide">
+          <Link to="/register" className="text-green-600 hover:underline">
             Daftar di sini
           </Link>
         </p>
