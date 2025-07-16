@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore"
 type Role = "admin" | "buyer" | null
 
 interface User {
+  displayName: string
   email: string
   username: string
   role: Role

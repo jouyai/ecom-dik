@@ -13,6 +13,8 @@ import OrderSummary from "@/pages/OrderSummary";
 import MyOrders from "@/pages/MyOrders";
 import Thanks from "@/pages/Thanks";
 import Footer from "@/components/Footer";
+import Pending from "@/pages/Pending";
+import Error from "@/pages/Error";
 
 export default function AppRoutes() {
   return (
@@ -42,6 +44,8 @@ export default function AppRoutes() {
               <Route path="/order-summary/:orderId" element={<OrderSummary />} />
               <Route path="/orders" element={<MyOrders />} />
               <Route path="/thanks" element={<Thanks />} />
+              <Route path="/pending" element={<Pending />} />
+              <Route path="/error" element={<Error />} />
             </Route>
           </Routes>
         </main>

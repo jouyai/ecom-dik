@@ -1,15 +1,8 @@
-// src/pages/Payment.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/auth";
-import {
-  collection,
-  getDocs,
-  deleteDoc,
-  doc,
-  addDoc,
-} from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cartStore";
@@ -17,7 +10,6 @@ import { useCart } from "@/lib/cartStore";
 export default function Payment() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [paymentMethod, setPaymentMethod] = useState("COD");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
   const { toggleRefresh } = useCart();
@@ -30,6 +22,23 @@ export default function Payment() {
     image?: string;
   }
 
+  // Load Midtrans Snap script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
+    script.setAttribute(
+      "data-client-key",
+      import.meta.env.VITE_MIDTRANS_CLIENT_KEY
+    );
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Ambil data keranjang dari Firestore
   useEffect(() => {
     const fetchCart = async () => {
       if (!user) return;
@@ -54,61 +63,96 @@ export default function Payment() {
     fetchCart();
   }, [user]);
 
-  const handlePayment = async () => {
+  const handleSnapPayment = async () => {
     if (!user || cart.length === 0) return toast.error("Keranjang kosong.");
 
     try {
-      await addDoc(collection(db, "orders"), {
-        user: user.email,
-        items: cart,
-        total,
-        paymentMethod,
-        createdAt: new Date(),
-        status: "menunggu konfirmasi",
-      });
-
-      // Setelah berhasil buat order, kosongkan keranjang
-      const itemPromises = cart.map((item) =>
-        deleteDoc(doc(db, "cart", user.email!, "items", item.id))
+      const orderId = `ORDER-${Date.now()}`;
+      const res = await fetch(
+        "https://midtrans-dika-production.up.railway.app/api/create-transaction",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            order_id: orderId,
+            gross_amount: total,
+            name: user.displayName || "Pelanggan",
+            email: user.email,
+            callback_urls: {
+              finish: "http://ecom-dik.vercel.app/thanks",
+              pending: "http://ecom-dik.vercel.app/pending",
+              error: "http://ecom-dik.vercel.app/error",
+            },
+          }),
+        }
       );
-      await Promise.all(itemPromises);
-      toggleRefresh();
 
-      toast.success("Pesanan berhasil dibuat!");
-      navigate("/thanks");
+      const data = await res.json();
+
+      if (!data.token) throw new Error("Gagal mendapatkan Snap token.");
+
+      window.snap.pay(data.token, {
+        onSuccess: async (result) => {
+          // Tidak langsung simpan order di sini, karena pakai halaman redirect
+          await addDoc(collection(db, "orders"), {
+            user: user.email,
+            items: cart,
+            total,
+            paymentMethod: "MIDTRANS",
+            status: "sudah dibayar",
+            createdAt: new Date(),
+            snap_result: result,
+          });
+
+          const itemPromises = cart.map((item) =>
+            deleteDoc(doc(db, "cart", user.email!, "items", item.id))
+          );
+          await Promise.all(itemPromises);
+          toggleRefresh();
+
+          toast.success("Pembayaran berhasil!");
+          navigate("/thanks");
+        },
+        onPending: async (result) => {
+          await addDoc(collection(db, "orders"), {
+            user: user.email,
+            items: cart,
+            total,
+            paymentMethod: "MIDTRANS",
+            status: "menunggu konfirmasi",
+            createdAt: new Date(),
+            snap_result: result,
+          });
+
+          const itemPromises = cart.map((item) =>
+            deleteDoc(doc(db, "cart", user.email!, "items", item.id))
+          );
+          await Promise.all(itemPromises);
+          toggleRefresh();
+          toast("Pembayaran masih diproses...");
+          navigate("/pending");
+        },
+        onError: (result) => {
+          toast.error("Pembayaran gagal.");
+          navigate("/error");
+        },
+        onClose: () => {
+          toast("Kamu menutup popup pembayaran.");
+        },
+      });
     } catch (err: any) {
-      toast.error("Gagal membuat pesanan: " + err.message);
+      toast.error("Gagal memproses pembayaran: " + err.message);
     }
   };
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Pilih Metode Pembayaran</h1>
-      <div className="space-y-4 mb-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="payment"
-            value="COD"
-            checked={paymentMethod === "COD"}
-            onChange={() => setPaymentMethod("COD")}
-          />
-          Bayar di Tempat (COD)
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="payment"
-            value="TRANSFER_BCA"
-            checked={paymentMethod === "TRANSFER_BCA"}
-            onChange={() => setPaymentMethod("TRANSFER_BCA")}
-          />
-          Transfer Bank (BCA)
-        </label>
-      </div>
+      <h1 className="text-2xl font-bold mb-6">Konfirmasi Pembayaran</h1>
       <p className="mb-4 font-bold">Total: Rp {total.toLocaleString()}</p>
-      <Button className="w-full" onClick={handlePayment}>
-        Konfirmasi Pembayaran
+      <Button className="w-full" onClick={handleSnapPayment}>
+        Bayar Sekarang
       </Button>
     </div>
   );
