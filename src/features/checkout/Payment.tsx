@@ -119,7 +119,7 @@ export default function Payment() {
           });
           await clearCart();
           toast.info("Pesanan Anda telah dibuat. Silakan selesaikan pembayaran.");
-          navigate("/pesanan-saya");
+          navigate("/orders");
         },
         onError: (_result: any) => {
           toast.error("Pembayaran gagal atau dibatalkan.");

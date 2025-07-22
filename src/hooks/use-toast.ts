@@ -174,38 +174,25 @@ function createNotification(props: Omit<ToasterNotification, "id">) {
   }
 }
 
-/**
- * Main API for displaying notifications.
- * @example toast({ title: "Product added!" })
- */
 export const toast = {
-  /** Displays a success notification (e.g., payment successful, item added to cart). */
   success: (props: NotificationProps) => {
     return createNotification({ ...props, variant: 'success' });
   },
-  /** Displays an error notification (e.g., out of stock, payment failed). */
   error: (props: NotificationProps) => {
     return createNotification({ ...props, variant: 'error' });
   },
-  /** Displays an info notification (e.g., your order has shipped). */
   info: (props: NotificationProps) => {
     return createNotification({ ...props, variant: 'info' });
   },
-  /** Displays a warning notification (e.g., last item in stock). */
   warning: (props: NotificationProps) => {
     return createNotification({ ...props, variant: 'warning' });
   },
-  /** Displays a custom notification if needed. */
   custom: (props: Omit<ToasterNotification, "id">) => {
     return createNotification(props);
   }
 };
 
-
-/**
- * React hook to access and manage the notification state.
- */
-export function useToast() { // ✅ RENAMED THIS FUNCTION
+export function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -218,7 +205,6 @@ export function useToast() { // ✅ RENAMED THIS FUNCTION
     }
   }, [state])
 
-  // For better consistency, you might consider renaming 'notifications' to 'toasts' here.
   return {
     ...state,
     dismiss: (notificationId?: string) => dispatch({ type: "DISMISS_NOTIFICATION", notificationId }),
