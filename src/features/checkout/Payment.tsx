@@ -86,20 +86,19 @@ export default function Payment() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            transaction_details: {
-              order_id: orderId,
-              gross_amount: total,
-            },
-            customer_details: {
-              first_name: user.displayName || user.username || "Pelanggan",
-              email: user.email,
-            },
-            callbacks: {
-              finish: "https://ecom-dik.vercel.app/thanks",
-            }
+            order_id: orderId,
+            gross_amount: total,
+            name: user.displayName || user.username || "Pelanggan",
+            email: user.email,
+            finish: "https://ecom-dik.vercel.app/thanks",
           }),
         }
       );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Gagal membuat sesi pembayaran.");
+      }
 
       const data = await res.json();
       if (!data.token) throw new Error("Gagal mendapatkan Snap token.");
@@ -112,7 +111,6 @@ export default function Payment() {
           });
           await clearCart();
           toast.success("Pembayaran Berhasil! Anda akan diarahkan...");
-          // HAPUS NAVIGATE: Biarkan Midtrans yang mengarahkan
         },
         onPending: async (result: any) => {
           await addDoc(collection(db, "orders"), {
@@ -120,11 +118,10 @@ export default function Payment() {
           });
           await clearCart();
           toast.info("Pembayaran sedang diproses. Anda akan diarahkan...");
-          // HAPUS NAVIGATE: Biarkan Midtrans yang mengarahkan
         },
         onError: (_result: any) => {
           toast.error("Pembayaran gagal atau dibatalkan.");
-          setPaymentProcessing(false); // Hentikan loading jika error
+          setPaymentProcessing(false);
         },
         onClose: () => {
           toast.info("Anda menutup jendela pembayaran.");
@@ -132,7 +129,7 @@ export default function Payment() {
         },
       });
     } catch (err: any) {
-      toast.error("Gagal memproses pembayaran: " + err.message);
+      toast.error(`Gagal memproses pembayaran: ${err.message}`);
       setPaymentProcessing(false);
     }
   };
