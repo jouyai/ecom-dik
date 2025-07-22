@@ -23,13 +23,17 @@ interface OrderItem {
 }
 
 interface Order {
-  id: string;
+  id: string; // Ini adalah ID Dokumen Firestore
   user?: string;
   items: OrderItem[];
   total: number;
   status: string;
   createdAt: Timestamp;
   snap_token?: string;
+  snap_result?: { // Menambahkan snap_result ke interface
+    order_id: string; // Ini adalah Order ID Midtrans
+    [key: string]: any;
+  };
 }
 
 export default function PesananSaya() {
@@ -80,7 +84,6 @@ export default function PesananSaya() {
     try {
         let tokenToUse = order.snap_token;
 
-        // Jika statusnya 'gagal' atau 'expired', buat transaksi baru
         if (order.status === 'gagal' || order.status === 'expired') {
             toast.info("Membuat sesi pembayaran baru...");
             const newOrderId = `RETRY-${order.id.substring(0, 8)}-${Date.now()}`;
@@ -99,7 +102,6 @@ export default function PesananSaya() {
             if (!data.token) throw new Error("Gagal mendapatkan token pembayaran baru.");
             
             tokenToUse = data.token;
-            // Update token baru dan set status kembali ke 'menunggu konfirmasi'
             const orderRef = doc(db, "orders", order.id);
             await updateDoc(orderRef, { snap_token: tokenToUse, status: 'menunggu konfirmasi' });
             setOrders(prev => prev.map(o => o.id === order.id ? {...o, snap_token: tokenToUse, status: 'menunggu konfirmasi'} : o));
@@ -128,7 +130,6 @@ export default function PesananSaya() {
             onClose: async () => {
                 const orderRef = doc(db, "orders", order.id);
                 const currentOrder = orders.find(o => o.id === order.id);
-                // Hanya set ke gagal jika statusnya bukan 'sudah dibayar'
                 if (currentOrder && currentOrder.status !== 'sudah dibayar') {
                     await updateDoc(orderRef, { status: "gagal" });
                     toast.info("Pembayaran dibatalkan dan ditandai sebagai gagal.");
@@ -144,26 +145,34 @@ export default function PesananSaya() {
     }
   };
 
-  const handleCheckStatus = async (orderId: string) => {
-    setCheckingStatus(orderId);
+  const handleCheckStatus = async (order: Order) => {
+    const midtransOrderId = order.snap_result?.order_id;
+
+    if (!midtransOrderId) {
+      toast.error("Tidak dapat menemukan ID transaksi Midtrans untuk pesanan ini.");
+      return;
+    }
+
+    setCheckingStatus(order.id);
     toast.info("Memeriksa status pembayaran...");
     try {
-        const res = await fetch(`https://midtrans-dika-production.up.railway.app/api/check-status/${orderId}`);
+        const res = await fetch(`https://midtrans-dika-production.up.railway.app/api/check-status/${midtransOrderId}`);
         
         if (!res.ok) {
-            throw new Error("Gagal menghubungi server.");
+            const errorData = await res.json();
+            throw new Error(errorData.status_message || "Gagal menghubungi server.");
         }
 
         const data = await res.json();
         const newStatus = data.new_status;
 
-        setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: newStatus} : o));
+        setOrders(prevOrders => prevOrders.map(o => o.id === order.id ? {...o, status: newStatus} : o));
         toast.success(`Status pesanan berhasil diperbarui menjadi: ${newStatus.replace("_", " ")}`);
 
     } catch (error: any) {
         toast.error(`Gagal memeriksa status: ${error.message}`);
     } finally {
-        setCheckingStatus(null);
+        setCheckingStatus(order.id);
     }
   };
 
@@ -240,7 +249,7 @@ export default function PesananSaya() {
                             {order.status === 'menunggu konfirmasi' && 
                                 <Button 
                                     variant="outline" 
-                                    onClick={() => handleCheckStatus(order.id)}
+                                    onClick={() => handleCheckStatus(order)}
                                     disabled={checkingStatus === order.id}
                                 >
                                     {checkingStatus === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
