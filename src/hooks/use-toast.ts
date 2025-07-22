@@ -176,7 +176,7 @@ function createNotification(props: Omit<ToasterNotification, "id">) {
 
 /**
  * Main API for displaying notifications.
- * @example notification.success({ title: "Product added!" })
+ * @example toast({ title: "Product added!" })
  */
 export const toast = {
   /** Displays a success notification (e.g., payment successful, item added to cart). */
@@ -205,7 +205,7 @@ export const toast = {
 /**
  * React hook to access and manage the notification state.
  */
-export function useToast() { // <-- RENAMED THIS FUNCTION
+export function useToast() { // ✅ RENAMED THIS FUNCTION
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -218,10 +218,9 @@ export function useToast() { // <-- RENAMED THIS FUNCTION
     }
   }, [state])
 
+  // For better consistency, you might consider renaming 'notifications' to 'toasts' here.
   return {
     ...state,
-    // Note: You may want to rename 'notifications' to 'toasts' for consistency
-    notifications: state.notifications, 
     dismiss: (notificationId?: string) => dispatch({ type: "DISMISS_NOTIFICATION", notificationId }),
   }
 }
