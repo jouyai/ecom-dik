@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight } from "lucide-react";
-import { Link as ScrollLink } from "react-scroll"; // Import dari react-scroll
+import { Link as ScrollLink } from "react-scroll";
 
+// 1. Interface diperbarui dengan 'isPublished'
 interface Product {
   id: string;
   name: string;
@@ -15,6 +16,7 @@ interface Product {
   price: number;
   image: string;
   description: string;
+  isPublished: boolean; // <-- Ditambahkan
 }
 
 export default function Home() {
@@ -24,27 +26,35 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   
   const navigate = useNavigate();
-  // Tidak perlu lagi useRef dan handleScrollToProducts
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
         const snapshot = await getDocs(collection(db, "products"));
-        const data = snapshot.docs.map(
+        const allProductsData = snapshot.docs.map(
           (doc) =>
             ({
               id: doc.id,
               ...(doc.data() as Omit<Product, "id">),
             } as Product)
         );
-        setProducts(data);
 
+        // 2. Filter produk untuk hanya menampilkan yang 'isPublished: true'
+        const publishedProducts = allProductsData.filter(
+          (p) => p.isPublished === true
+        );
+
+        // Atur state dengan data yang sudah difilter
+        setProducts(publishedProducts);
+
+        // Buat daftar kategori unik dari produk yang sudah dipublikasikan
         const uniqueCategories = [
           "all",
-          ...Array.from(new Set(data.map((p) => p.category))),
+          ...Array.from(new Set(publishedProducts.map((p) => p.category))),
         ];
         setCategories(uniqueCategories);
+
       } catch (error) {
         console.error("Gagal memuat produk:", error);
       } finally {
@@ -55,6 +65,7 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  // Tidak perlu diubah, karena 'products' sudah berisi data yang published
   const filteredProducts =
     selectedCategory === "all"
       ? products
@@ -71,8 +82,6 @@ export default function Home() {
 
   return (
     <div className="bg-stone-50">
-      {/* Tidak perlu lagi tag <style> */}
-      
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 text-center">
         <h1 className="text-4xl md:text-6xl font-bold text-stone-800 mb-4">
@@ -82,12 +91,11 @@ export default function Home() {
           Temukan koleksi furnitur pilihan yang dirancang untuk kenyamanan,
           keindahan, dan kehidupan Anda.
         </p>
-        {/* Tombol dibungkus dengan ScrollLink */}
         <ScrollLink
-          to="products-section" // Target ID dari elemen tujuan
+          to="products-section"
           smooth={true}
           duration={500}
-          offset={-80} // Offset agar tidak terlalu menempel dengan navbar
+          offset={-80}
           spy={true}
         >
           <Button 
@@ -99,7 +107,7 @@ export default function Home() {
         </ScrollLink>
       </section>
 
-      {/* Products Section diberi ID */}
+      {/* Products Section */}
       <main id="products-section" className="container mx-auto px-4 py-12">
         {/* Filter Kategori */}
         <div className="mb-10 flex justify-center flex-wrap gap-3">

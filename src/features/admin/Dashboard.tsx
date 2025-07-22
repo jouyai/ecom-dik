@@ -1,157 +1,358 @@
-import { useEffect, useState } from "react"
-import { db } from "@/lib/firebase"
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
+// pages/admin/dashboard.tsx (Contoh path file)
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase"; // Pastikan path ini benar
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
 
-export default function AdminDashboard() {
-  const [products, setProducts] = useState<any[]>([])
-  const [form, setForm] = useState({ name: "", category: "", price: "", description: "", image: "" })
-  const [editingId, setEditingId] = useState<string | null>(null)
+// Import komponen UI dari shadcn/ui
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
-  const fetchProducts = async () => {
-    const querySnapshot = await getDocs(collection(db, "products"))
-    const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    setProducts(items)
-  }
+// 1. Definisikan interface untuk produk (stok juga dihapus)
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string;
+  imageUrl: string;
+  isPublished: boolean;
+  createdAt?: Timestamp;
+}
+
+// State untuk form
+type ProductFormState = Omit<Product, "id" | "createdAt">;
+
+const INITIAL_FORM_STATE: ProductFormState = {
+  name: "",
+  category: "",
+  price: 0,
+  description: "",
+  imageUrl: "",
+  isPublished: true,
+};
+
+// 2. Komponen Form dibuat terpisah agar lebih rapi
+const ProductForm = ({
+  onSubmit,
+  initialData,
+  isEditing,
+  isLoading,
+}: {
+  onSubmit: (data: ProductFormState) => void;
+  initialData: ProductFormState;
+  isEditing: boolean;
+  isLoading: boolean;
+}) => {
+  const [form, setForm] = useState(initialData);
 
   useEffect(() => {
-    fetchProducts()
-  }, [])
+    setForm(initialData);
+  }, [initialData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value, type } = e.target;
+    // @ts-ignore
+    const isCheckbox = type === "checkbox";
+    setForm((prev) => ({
+      ...prev,
+      [name]: isCheckbox ? (e.target as HTMLInputElement).checked : value,
+    }));
+  };
 
-    const { name, category, price, description, image } = form
-    if (!name || !category || !price || isNaN(Number(price))) {
-      toast.error("Nama, kategori, dan harga harus diisi dengan benar.")
-      return
-    }
-
-    const priceValue = parseFloat(price)
-
-    try {
-      if (editingId) {
-        await updateDoc(doc(db, "products", editingId), {
-          name,
-          category,
-          price: priceValue,
-          description,
-          image,
-        })
-        toast.success("Produk berhasil diupdate!")
-      } else {
-        await addDoc(collection(db, "products"), {
-          name,
-          category,
-          price: priceValue,
-          description,
-          image,
-        })
-        toast.success("Produk berhasil ditambahkan!")
-      }
-
-      setForm({ name: "", category: "", price: "", description: "", image: "" })
-      setEditingId(null)
-      fetchProducts()
-    } catch (err) {
-      console.error(err)
-      toast.error("Gagal menyimpan produk.")
-    }
-  }
-
-  const handleEdit = (product: any) => {
-    setForm({
-      name: product.name,
-      category: product.category,
-      price: String(product.price),
-      description: product.description,
-      image: product.image,
-    })
-    setEditingId(product.id)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Yakin ingin menghapus produk ini?")) return
-    await deleteDoc(doc(db, "products", id))
-    toast.success("Produk dihapus.")
-    fetchProducts()
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Konversi harga ke number, stok sudah tidak ada
+    const numericForm = {
+      ...form,
+      price: Number(form.price) || 0,
+    };
+    onSubmit(numericForm);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 p-4">
-      <h1 className="text-3xl font-bold mb-4">Dashboard Admin - Produk</h1>
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle>
+          {isEditing ? "Edit Produk Furnitur" : "Tambah Produk Baru"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {/* Kolom 1 */}
+          <div className="space-y-4">
+            <Input
+              name="name"
+              placeholder="Nama Produk (e.g., Meja Makan Kayu Jati)"
+              value={form.name}
+              onChange={handleChange}
+              required
+            />
+            <Input
+              name="category"
+              placeholder="Kategori (e.g., Meja, Kursi, Lemari)"
+              value={form.category}
+              onChange={handleChange}
+              required
+            />
+            <Input
+              name="price"
+              placeholder="Harga"
+              type="number"
+              value={form.price}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          {/* Kolom 2 */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Input
+                name="imageUrl"
+                placeholder="URL Gambar Produk"
+                value={form.imageUrl}
+                onChange={handleChange}
+                className="flex-grow"
+              />
+              {form.imageUrl && (
+                <img
+                  src={form.imageUrl}
+                  alt="preview"
+                  className="w-12 h-12 object-cover rounded-md"
+                />
+              )}
+            </div>
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="isPublished"
+                name="isPublished"
+                checked={form.isPublished}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, isPublished: checked }))
+                }
+              />
+              <Label htmlFor="isPublished">Publikasikan Produk</Label>
+            </div>
+          </div>
+          {/* Deskripsi & Tombol */}
+          <div className="md:col-span-2">
+            <Textarea
+              name="description"
+              placeholder="Deskripsi lengkap produk..."
+              value={form.description}
+              onChange={handleChange}
+              rows={4}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Button type="submit" disabled={isLoading} className="w-full">
+              {isLoading
+                ? "Menyimpan..."
+                : isEditing
+                ? "Update Produk"
+                : "Tambah Produk"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Input
-          placeholder="Nama Produk"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="Kategori"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="Harga"
-          type="number"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          required
-        />
-        <Input
-          placeholder="Gambar (URL)"
-          value={form.image}
-          onChange={(e) => setForm({ ...form, image: e.target.value })}
-        />
-        <Input
-          placeholder="Deskripsi"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-
-        <Button type="submit" className="col-span-full">
-          {editingId ? "Update Produk" : "Tambah Produk"}
-        </Button>
-      </form>
-
-      {/* Table */}
+// 3. Komponen Tabel dibuat terpisah untuk menampilkan data
+const ProductTable = ({
+  products,
+  onEdit,
+  onDelete,
+}: {
+  products: Product[];
+  onEdit: (product: Product) => void;
+  onDelete: (id: string) => void;
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle>Daftar Produk</CardTitle>
+    </CardHeader>
+    <CardContent>
       <div className="overflow-x-auto">
-        <table className="w-full border text-sm text-left">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-2 border">Nama</th>
-              <th className="p-2 border">Kategori</th>
-              <th className="p-2 border">Harga</th>
-              <th className="p-2 border">Deskripsi</th>
-              <th className="p-2 border">Gambar</th>
-              <th className="p-2 border">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Gambar</TableHead>
+              <TableHead>Nama Produk</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Harga</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {products.map((p) => (
-              <tr key={p.id}>
-                <td className="border p-2">{p.name}</td>
-                <td className="border p-2">{p.category}</td>
-                <td className="border p-2">Rp {Number(p.price).toLocaleString()}</td>
-                <td className="border p-2">{p.description}</td>
-                <td className="border p-2">
-                  {p.image && <img src={p.image} alt={p.name} className="w-12 h-12 object-cover" />}
-                </td>
-                <td className="border p-2 flex gap-2">
-                  <Button variant="outline" onClick={() => handleEdit(p)}>Edit</Button>
-                  <Button variant="destructive" onClick={() => handleDelete(p.id)}>Hapus</Button>
-                </td>
-              </tr>
+              <TableRow key={p.id}>
+                <TableCell>
+                  {p.imageUrl && (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      className="w-12 h-12 object-cover rounded-md"
+                    />
+                  )}
+                </TableCell>
+                <TableCell className="font-medium">{p.name}</TableCell>
+                <TableCell>{p.category}</TableCell>
+                <TableCell>
+                  {new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                  }).format(p.price)}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={p.isPublished ? "default" : "secondary"}>
+                    {p.isPublished ? "Published" : "Draft"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="flex justify-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => onEdit(p)}>
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDelete(p.id)}
+                  >
+                    Hapus
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
+    </CardContent>
+  </Card>
+);
+
+// 4. Komponen Utama Dashboard yang menggabungkan semuanya
+export default function AdminDashboard() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchProducts = async () => {
+    const querySnapshot = await getDocs(collection(db, "products"));
+    const items = querySnapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() } as Product)
+    );
+    setProducts(items);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleFormSubmit = async (data: ProductFormState) => {
+    setIsLoading(true);
+    try {
+      if (editingProduct) {
+        // Update
+        const productRef = doc(db, "products", editingProduct.id);
+        await updateDoc(productRef, data);
+        toast.success("Produk berhasil diupdate!");
+      } else {
+        // Create
+        await addDoc(collection(db, "products"), {
+          ...data,
+          createdAt: serverTimestamp(),
+        });
+        toast.success("Produk berhasil ditambahkan!");
+      }
+      setEditingProduct(null);
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal menyimpan produk. Lihat konsol untuk detail.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // Auto-scroll ke atas
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProduct(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Anda yakin ingin menghapus produk ini secara permanen?"))
+      return;
+    try {
+      await deleteDoc(doc(db, "products", id));
+      toast.success("Produk berhasil dihapus.");
+      fetchProducts();
+    } catch (err) {
+      console.error(err);
+      toast.error("Gagal menghapus produk.");
+    }
+  };
+
+  // Menyiapkan data untuk form. Jika sedang edit, isi dengan data produk. Jika tidak, gunakan state kosong.
+  const formInitialData = editingProduct
+    ? { ...INITIAL_FORM_STATE, ...editingProduct }
+    : INITIAL_FORM_STATE;
+
+  return (
+    <div className="max-w-7xl mx-auto mt-10 p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Manajemen Produk Furnitur</h1>
+        {editingProduct && (
+          <Button variant="secondary" onClick={handleCancelEdit}>
+            Batal Edit
+          </Button>
+        )}
+      </div>
+
+      <ProductForm
+        onSubmit={handleFormSubmit}
+        initialData={formInitialData}
+        isEditing={!!editingProduct}
+        isLoading={isLoading}
+      />
+
+      <ProductTable
+        products={products}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
-  )
+  );
 }
