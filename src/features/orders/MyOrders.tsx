@@ -184,7 +184,8 @@ export default function PesananSaya() {
     } catch (error: any) {
         toast.error(`Gagal Memeriksa Status: ${error.message}`);
     } finally {
-        setCheckingStatus(order.id);
+        // PERBAIKAN: Set status kembali ke null untuk menghentikan spinner
+        setCheckingStatus(null);
     }
   };
 
