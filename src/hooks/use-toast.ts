@@ -1,28 +1,35 @@
 "use client"
 
-// Inspired by react-hot-toast library
+// Adapted from react-hot-toast and customized for e-commerce notifications.
 import * as React from "react"
 
 import type {
-  ToastActionElement,
-  ToastProps,
+  ToastActionElement as NotificationActionElement,
+  ToastProps as NotificationComponentProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 2
-const TOAST_REMOVE_DELAY = 10000
+const NOTIFICATION_LIMIT = 3
+const NOTIFICATION_REMOVE_DELAY = 8000
 
-type ToasterToast = ToastProps & {
+// Defines the variants of notifications that can appear on the e-commerce site.
+export type NotificationVariant = "success" | "info" | "warning" | "error"
+
+// The core fix is here: We use Omit<> to remove the original 'variant' property
+// from NotificationComponentProps before adding our own to prevent a type conflict.
+type ToasterNotification = Omit<NotificationComponentProps, "variant"> & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: ToastActionElement
+  action?: NotificationActionElement
+  variant?: NotificationVariant
+  icon?: React.ReactNode
 }
 
 const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
+  ADD_NOTIFICATION: "ADD_NOTIFICATION",
+  UPDATE_NOTIFICATION: "UPDATE_NOTIFICATION",
+  DISMISS_NOTIFICATION: "DISMISS_NOTIFICATION",
+  REMOVE_NOTIFICATION: "REMOVE_NOTIFICATION",
 } as const
 
 let count = 0
@@ -36,102 +43,100 @@ type ActionType = typeof actionTypes
 
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
+      type: ActionType["ADD_NOTIFICATION"]
+      notification: ToasterNotification
     }
   | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
+      type: ActionType["UPDATE_NOTIFICATION"]
+      notification: Partial<ToasterNotification>
     }
   | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
+      type: ActionType["DISMISS_NOTIFICATION"]
+      notificationId?: ToasterNotification["id"]
     }
   | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
+      type: ActionType["REMOVE_NOTIFICATION"]
+      notificationId?: ToasterNotification["id"]
     }
 
 interface State {
-  toasts: ToasterToast[]
+  notifications: ToasterNotification[]
 }
 
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+const notificationTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
+const addToRemoveQueue = (notificationId: string) => {
+  if (notificationTimeouts.has(notificationId)) {
     return
   }
 
   const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
+    notificationTimeouts.delete(notificationId)
     dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
+      type: "REMOVE_NOTIFICATION",
+      notificationId: notificationId,
     })
-  }, TOAST_REMOVE_DELAY)
+  }, NOTIFICATION_REMOVE_DELAY)
 
-  toastTimeouts.set(toastId, timeout)
+  notificationTimeouts.set(notificationId, timeout)
 }
 
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
-    case "ADD_TOAST":
+    case "ADD_NOTIFICATION":
       return {
         ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+        notifications: [action.notification, ...state.notifications].slice(0, NOTIFICATION_LIMIT),
       }
 
-    case "UPDATE_TOAST":
+    case "UPDATE_NOTIFICATION":
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        notifications: state.notifications.map((n) =>
+          n.id === action.notification.id ? { ...n, ...action.notification } : n
         ),
       }
 
-    case "DISMISS_TOAST": {
-      const { toastId } = action
+    case "DISMISS_NOTIFICATION": {
+      const { notificationId } = action
 
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
+      if (notificationId) {
+        addToRemoveQueue(notificationId)
       } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
+        state.notifications.forEach((notification) => {
+          addToRemoveQueue(notification.id)
         })
       }
 
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
+        notifications: state.notifications.map((n) =>
+          n.id === notificationId || notificationId === undefined
             ? {
-                ...t,
+                ...n,
                 open: false,
               }
-            : t
+            : n
         ),
       }
     }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
+    case "REMOVE_NOTIFICATION":
+      if (action.notificationId === undefined) {
         return {
           ...state,
-          toasts: [],
+          notifications: [],
         }
       }
       return {
         ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+        notifications: state.notifications.filter((n) => n.id !== action.notificationId),
       }
   }
 }
 
 const listeners: Array<(state: State) => void> = []
 
-let memoryState: State = { toasts: [] }
+let memoryState: State = { notifications: [] }
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
@@ -140,21 +145,25 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+// Base properties for creating a new notification.
+type NotificationProps = Omit<ToasterNotification, "id" | "variant"> & {
+    title: React.ReactNode;
+};
 
-function toast({ ...props }: Toast) {
+// Internal function to create and dispatch a notification.
+function createNotification(props: Omit<ToasterNotification, "id">) {
   const id = genId()
 
-  const update = (props: ToasterToast) =>
+  const update = (props: ToasterNotification) =>
     dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
+      type: "UPDATE_NOTIFICATION",
+      notification: { ...props, id },
     })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+  const dismiss = () => dispatch({ type: "DISMISS_NOTIFICATION", notificationId: id })
 
   dispatch({
-    type: "ADD_TOAST",
-    toast: {
+    type: "ADD_NOTIFICATION",
+    notification: {
       ...props,
       id,
       open: true,
@@ -171,7 +180,38 @@ function toast({ ...props }: Toast) {
   }
 }
 
-function useToast() {
+/**
+ * Main API for displaying notifications.
+ * @example notification.success({ title: "Product added!" })
+ */
+export const notification = {
+  /** Displays a success notification (e.g., payment successful, item added to cart). */
+  success: (props: NotificationProps) => {
+    return createNotification({ ...props, variant: 'success' });
+  },
+  /** Displays an error notification (e.g., out of stock, payment failed). */
+  error: (props: NotificationProps) => {
+    return createNotification({ ...props, variant: 'error' });
+  },
+  /** Displays an info notification (e.g., your order has shipped). */
+  info: (props: NotificationProps) => {
+    return createNotification({ ...props, variant: 'info' });
+  },
+  /** Displays a warning notification (e.g., last item in stock). */
+  warning: (props: NotificationProps) => {
+    return createNotification({ ...props, variant: 'warning' });
+  },
+  /** Displays a custom notification if needed. */
+  custom: (props: Omit<ToasterNotification, "id">) => {
+    return createNotification(props);
+  }
+};
+
+
+/**
+ * React hook to access and manage the notification state.
+ */
+export function useNotification() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -186,9 +226,6 @@ function useToast() {
 
   return {
     ...state,
-    toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    dismiss: (notificationId?: string) => dispatch({ type: "DISMISS_NOTIFICATION", notificationId }),
   }
 }
-
-export { useToast, toast }
