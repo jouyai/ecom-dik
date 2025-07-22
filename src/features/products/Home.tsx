@@ -60,7 +60,7 @@ export default function Home() {
 
     fetchProducts();
   }, []);
-
+// ar_bdrt
   const filteredProducts =
     selectedCategory === "all"
       ? products
