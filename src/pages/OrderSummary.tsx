@@ -42,7 +42,6 @@ export default function OrderSummary() {
     const fetchCartAndShipping = async () => {
       if (!user) return
 
-      // Fetch cart items
       const cartSnap = await getDocs(collection(db, "cart", user.email!, "items"))
       const cartItems = cartSnap.docs.map((doc) => ({
         id: doc.id,
@@ -50,7 +49,6 @@ export default function OrderSummary() {
       })) as Product[]
       setCart(cartItems)
 
-      // Fetch latest shipping info
       const shippingSnap = await getDocs(
         query(collection(db, "shippings"), where("user", "==", user.email))
       )
@@ -74,7 +72,6 @@ export default function OrderSummary() {
     try {
       setLoading(true)
 
-      // Clear cart
       const cartSnap = await getDocs(collection(db, "cart", user.email!, "items"))
       const deletions = cartSnap.docs.map((docItem) =>
         deleteDoc(doc(db, "cart", user.email!, "items", docItem.id))

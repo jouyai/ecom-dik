@@ -118,7 +118,9 @@ export default function Payment() {
 
           await clearCart();
           toast.success("Pembayaran berhasil!");
-          navigate("/thanks");
+          navigate(
+            `/thanks?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`
+          );
         },
         onPending: async (result: any) => {
           await addDoc(collection(db, "orders"), {
@@ -133,14 +135,18 @@ export default function Payment() {
 
           await clearCart();
           toast("Pembayaran sedang diproses...");
-          navigate("/pending");
+          navigate(
+            `/thanks?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`
+          );
         },
-        onError: (_: any) => {
-          toast.error("Pembayaran gagal.");
-          navigate("/error");
+        onError: (result: any) => {
+          toast.error("Pembayaran gagal atau dibatalkan.");
+          navigate(
+            `/thanks?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=deny`
+          );
         },
         onClose: () => {
-          toast("Kamu menutup popup pembayaran.");
+          toast.info("Anda menutup jendela pembayaran.");
         },
       });
     } catch (err: any) {

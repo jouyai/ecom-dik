@@ -37,10 +37,8 @@ export default function MyOrders() {
       try {
         let q;
         if (user.role === "admin") {
-          // Admin ambil semua pesanan
           q = query(collection(db, "orders"), orderBy("createdAt", "desc"))
         } else {
-          // Buyer hanya pesanannya sendiri
           q = query(
             collection(db, "orders"),
             where("user", "==", user.email),

@@ -34,7 +34,6 @@ export default function ProductDetail() {
         const fetchedProduct = { id: snap.id, ...snap.data() } as Product
         setProduct(fetchedProduct)
 
-        // fetch related products (kategori yang sama)
         const q = query(
           collection(db, "products"),
           where("category", "==", fetchedProduct.category),

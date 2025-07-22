@@ -34,8 +34,8 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await logout(); // ini harus async biar nunggu logout selesai
-      navigate("/login"); // pindah ke login page
+      await logout();
+      navigate("/login");
     } catch (err) {
       console.error("Logout gagal:", err);
     }

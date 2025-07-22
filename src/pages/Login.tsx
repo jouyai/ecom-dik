@@ -25,7 +25,6 @@ export default function Login() {
       const user = userCredential.user
       const uid = user.uid
 
-      // Cari user di users, jika tidak ada cek di admins
       let userDoc = await getDoc(doc(db, "users", uid));
       let userData;
       if (userDoc.exists()) {
@@ -33,7 +32,7 @@ export default function Login() {
       } else {
         userDoc = await getDoc(doc(db, "admins", uid));
         if (!userDoc.exists()) {
-          logout(); // Paksa logout jika tidak ditemukan di Firestore
+          logout();
           throw new Error("User tidak ditemukan di database.");
         }
         userData = userDoc.data();

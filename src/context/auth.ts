@@ -31,20 +31,18 @@ export const useAuth = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      await signOut(auth); // firebase sign out
+      await signOut(auth);
       document.getElementById("tawk-script")?.remove();
       const iframe = document.querySelector("iframe[src*='tawk']");
       if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
 
       set({ user: null, loading: false });
-      // no reload, state akan berubah otomatis dan bisa di-handle di komponen (misal: pakai navigate("/login"))
     } catch (err) {
       console.error("Gagal logout:", err);
     }
   },
 }));
 
-// Auto sync user dari Firebase
 onAuthStateChanged(auth, async (firebaseUser) => {
   if (firebaseUser) {
     try {

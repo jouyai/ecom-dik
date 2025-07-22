@@ -23,7 +23,6 @@ export default function AdminDashboard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // ✅ Validasi input
     const { name, category, price, description, image } = form
     if (!name || !category || !price || isNaN(Number(price))) {
       toast.error("Nama, kategori, dan harga harus diisi dengan benar.")

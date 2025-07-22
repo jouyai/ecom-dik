@@ -8,12 +8,10 @@ export default function Thanks() {
   const [countdown, setCountdown] = useState(5);
   const { toggleRefresh } = useCart();
 
-  // Reset badge/cart saat user sampai di halaman ini
   useEffect(() => {
     toggleRefresh();
   }, [toggleRefresh]);
 
-  // Timer untuk redirect otomatis
   useEffect(() => {
     if (countdown <= 0) {
       navigate("/");
