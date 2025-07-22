@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/auth";
 import {
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useCart } from "@/context/cartStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { ChevronRight, Loader2 } from "lucide-react";
+import useMidtransSnap from "@/hooks/useMidtransSnap";
 
 declare global {
   interface Window {
@@ -31,8 +32,8 @@ interface CartItem {
 }
 
 export default function Payment() {
+  const isSnapReady = useMidtransSnap();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { toggleRefresh } = useCart();
 
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -40,25 +41,8 @@ export default function Payment() {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
-    script.setAttribute(
-      "data-client-key",
-      import.meta.env.VITE_MIDTRANS_CLIENT_KEY
-    );
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  useEffect(() => {
     const fetchCart = async () => {
-      if (!user) {
-        return;
-      }
+      if (!user) return;
       try {
         const snapshot = await getDocs(
           collection(db, "cart", user.email!, "items")
@@ -84,6 +68,10 @@ export default function Payment() {
   }, [user]);
 
   const handleSnapPayment = async () => {
+    if (!isSnapReady) {
+      toast.error("Layanan pembayaran sedang dimuat, coba lagi sesaat.");
+      return;
+    }
     if (!user || cart.length === 0) {
       return toast.error("Keranjang kosong.");
     }
@@ -102,9 +90,8 @@ export default function Payment() {
             gross_amount: total,
             name: user.displayName || user.username || "Pelanggan",
             email: user.email,
-            callback_urls: {
-              finish: "https://ecom-dik.vercel.app/thanks",
-            },
+            // Pastikan finish URL sudah benar
+            finish: "https://ecom-dik.vercel.app/thanks",
           }),
         }
       );
@@ -119,19 +106,20 @@ export default function Payment() {
             user: user.email, items: cart, total, paymentMethod: "MIDTRANS", status: "sudah dibayar", createdAt: serverTimestamp(), snap_result: result,
           });
           await clearCart();
-          toast.success("Pembayaran berhasil!");
-          navigate(`/thanks?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`);
+          toast.success("Pembayaran Berhasil! Anda akan diarahkan...");
+          // HAPUS NAVIGATE: Biarkan Midtrans yang mengarahkan
         },
         onPending: async (result: any) => {
           await addDoc(collection(db, "orders"), {
             user: user.email, items: cart, total, paymentMethod: "MIDTRANS", status: "menunggu konfirmasi", createdAt: serverTimestamp(), snap_result: result, snap_token: snapToken,
           });
           await clearCart();
-          toast("Pembayaran sedang diproses...");
-          navigate(`/thanks?order_id=${result.order_id}&status_code=${result.status_code}&transaction_status=${result.transaction_status}`);
+          toast.info("Pembayaran sedang diproses. Anda akan diarahkan...");
+          // HAPUS NAVIGATE: Biarkan Midtrans yang mengarahkan
         },
         onError: (_result: any) => {
           toast.error("Pembayaran gagal atau dibatalkan.");
+          setPaymentProcessing(false); // Hentikan loading jika error
         },
         onClose: () => {
           toast.info("Anda menutup jendela pembayaran.");
@@ -201,7 +189,7 @@ export default function Payment() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full bg-stone-800 hover:bg-stone-700 h-12 text-base" onClick={handleSnapPayment} disabled={paymentProcessing}>
+                    <Button className="w-full bg-stone-800 hover:bg-stone-700 h-12 text-base" onClick={handleSnapPayment} disabled={!isSnapReady || paymentProcessing}>
                         {paymentProcessing ? <Loader2 className="animate-spin mr-2" /> : null}
                         {paymentProcessing ? "Memproses..." : "Bayar Sekarang"}
                     </Button>
