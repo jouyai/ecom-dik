@@ -205,7 +205,7 @@ export const toast = {
 /**
  * React hook to access and manage the notification state.
  */
-export function useNotification() {
+export function useToast() { // <-- RENAMED THIS FUNCTION
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
@@ -220,6 +220,8 @@ export function useNotification() {
 
   return {
     ...state,
+    // Note: You may want to rename 'notifications' to 'toasts' for consistency
+    notifications: state.notifications, 
     dismiss: (notificationId?: string) => dispatch({ type: "DISMISS_NOTIFICATION", notificationId }),
   }
 }
