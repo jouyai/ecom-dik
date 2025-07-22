@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/auth";
 import {
@@ -35,6 +35,7 @@ export default function Payment() {
   const isSnapReady = useMidtransSnap();
   const { user } = useAuth();
   const { toggleRefresh } = useCart();
+  const navigate = useNavigate(); // Tambahkan kembali useNavigate
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -117,7 +118,9 @@ export default function Payment() {
             user: user.email, items: cart, total, paymentMethod: "MIDTRANS", status: "menunggu konfirmasi", createdAt: serverTimestamp(), snap_result: result, snap_token: snapToken,
           });
           await clearCart();
-          toast.info("Pembayaran sedang diproses. Anda akan diarahkan...");
+          // PERBAIKAN: Ubah notifikasi dan arahkan ke halaman pesanan
+          toast.info("Pesanan Anda telah dibuat. Silakan selesaikan pembayaran.");
+          navigate("/pesanan-saya");
         },
         onError: (_result: any) => {
           toast.error("Pembayaran gagal atau dibatalkan.");
