@@ -13,10 +13,7 @@ import Payment from "@/pages/Payment";
 import TransactionResult from "@/pages/TransactionResult";
 import OrderSummary from "@/pages/OrderSummary";
 import MyOrders from "@/pages/MyOrders";
-import Thanks from "@/pages/Thanks";
 import Footer from "@/components/Footer";
-import Pending from "@/pages/Pending";
-import Error from "@/pages/Error";
 import { useAuth } from "@/context/auth";
 import { useEffect } from "react";
 
