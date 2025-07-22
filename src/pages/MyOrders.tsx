@@ -1,137 +1,173 @@
-import { useEffect, useState } from "react"
-import { db } from "@/lib/firebase"
-import { useAuth } from "@/context/auth"
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  getDocs,
-  Timestamp,
-} from "firebase/firestore"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/auth";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, doc, updateDoc, Timestamp, orderBy } from "firebase/firestore";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface Order {
-  id: string
-  user?: string
-  items: {
-    name: string
-    quantity: number
-    price: number
-    image?: string
-  }[]
-  total: number
-  createdAt?: Timestamp
-  status?: string
+// Deklarasikan window.snap agar TypeScript tidak error
+declare global {
+  interface Window {
+    snap: any;
+  }
 }
 
-export default function MyOrders() {
-  const { user, loading } = useAuth()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [fetching, setFetching] = useState(true)
+// Definisikan tipe data untuk pesanan
+interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+}
+
+interface Order {
+  id: string;
+  user?: string; // User email
+  items: OrderItem[];
+  total: number;
+  status: string;
+  createdAt: Timestamp;
+  snap_token?: string; // Token bisa jadi tidak ada di pesanan lama
+}
+
+export default function PesananSaya() {
+  const { user, loading: authLoading } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user) return
-
+      if (!user) return;
+      setFetching(true);
       try {
         let q;
+        // Jika user adalah admin, ambil semua pesanan. Jika bukan, ambil pesanan milik user tsb.
         if (user.role === "admin") {
-          q = query(collection(db, "orders"), orderBy("createdAt", "desc"))
+          q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
         } else {
           q = query(
             collection(db, "orders"),
             where("user", "==", user.email),
             orderBy("createdAt", "desc")
-          )
+          );
         }
 
-        const snapshot = await getDocs(q)
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Order, "id">),
-        }))
-        setOrders(data)
-      } catch (err) {
-        console.error("Gagal fetch orders:", err)
+        const querySnapshot = await getDocs(q);
+        const userOrders = querySnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Order));
+        
+        setOrders(userOrders);
+      } catch (error) {
+        console.error("Error fetching orders: ", error);
+        toast.error("Gagal memuat riwayat pesanan.");
       } finally {
-        setFetching(false)
+        setFetching(false);
       }
+    };
+
+    if (!authLoading) {
+        fetchOrders();
+    }
+  }, [user, authLoading]);
+  
+  // Fungsi untuk memicu ulang pembayaran
+  const handleRetryPayment = (orderId: string, snapToken: string) => {
+    if (!window.snap) {
+        toast.error("Layanan pembayaran tidak tersedia saat ini.");
+        return;
     }
 
-    if (!loading) fetchOrders()
-  }, [user, loading])
+    window.snap.pay(snapToken, {
+        onSuccess: async (result: any) => {
+            const orderRef = doc(db, "orders", orderId);
+            await updateDoc(orderRef, {
+                status: "sudah dibayar",
+                snap_result: result,
+            });
+            toast.success("Pembayaran berhasil!");
+            // Refresh data tanpa reload halaman
+            setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: 'sudah dibayar'} : o));
+        },
+        onPending: (_result: any) => {
+            toast.info("Status pembayaran masih menunggu konfirmasi.");
+        },
+        onError: (_result: any) => {
+            toast.error("Pembayaran gagal.");
+        },
+        onClose: () => {
+            toast.info("Anda menutup jendela pembayaran.");
+        }
+    });
+  };
 
   const formatDate = (timestamp?: Timestamp) => {
-    if (!timestamp) return "-"
-    const date = timestamp.toDate()
-    return date.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    })
-  }
+    if (!timestamp) return "-";
+    return timestamp.toDate().toLocaleDateString("id-ID", {
+      day: "2-digit", month: "long", year: "numeric"
+    });
+  };
 
-  if (loading || fetching) {
-    return <p className="text-center text-gray-500 mt-10">Memuat pesanan...</p>
+  if (authLoading || fetching) {
+    return <div className="text-center py-10">Memuat pesanan...</div>;
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">
-        {user?.role === "admin" ? "Log Pesanan" : "Pesanan Saya"}
+      <h1 className="text-3xl font-bold mb-8">
+        {user?.role === "admin" ? "Semua Pesanan" : "Pesanan Saya"}
       </h1>
-
       {orders.length === 0 ? (
-        <p className="text-gray-500">Belum ada pesanan.</p>
+        <p>Belum ada riwayat pesanan.</p>
       ) : (
         <div className="space-y-6">
           {orders.map((order) => (
-            <Card key={order.id}>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex justify-between items-center text-sm text-gray-600">
-                  <p>ID: {order.id}</p>
-                  <p>{formatDate(order.createdAt)}</p>
+            <Card key={order.id} className="bg-white border rounded-lg shadow-sm overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500">ORDER ID: {order.id}</p>
+                    <p className="text-sm text-gray-500">{formatDate(order.createdAt)}</p>
+                    {user?.role === 'admin' && (
+                        <p className="text-sm text-gray-700 pt-1"><strong>Pembeli:</strong> {order.user}</p>
+                    )}
+                  </div>
+                  <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                    order.status === 'sudah dibayar' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {order.status.replace("_", " ")}
+                  </span>
+                </div>
+                
+                <div className="border-t border-b py-4 my-4">
+                  {order.items.map(item => (
+                      <div key={item.id} className="flex items-center space-x-4 mb-2">
+                          <img src={item.image || 'https://placehold.co/64x64/e2e8f0/e2e8f0'} alt={item.name} className="w-16 h-16 rounded-md object-cover"/>
+                          <div>
+                              <p className="font-semibold">{item.name}</p>
+                              <p className="text-sm text-gray-600">{item.quantity} x Rp {item.price.toLocaleString()}</p>
+                          </div>
+                      </div>
+                  ))}
                 </div>
 
-                {user?.role === "admin" && (
-                  <p className="text-sm text-gray-700">
-                    <strong>Email Pembeli:</strong> {order.user || "Tidak diketahui"}
-                  </p>
-                )}
-
-                <span className="inline-block text-sm text-white bg-blue-600 px-2 py-0.5 rounded">
-                  {order.status || "diproses"}
-                </span>
-
-                <ul className="space-y-2 mt-2">
-                  {order.items.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-4">
-                      {item.image && (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-16 h-16 object-contain bg-white rounded"
-                        />
-                      )}
-                      <div>
-                        <p className="font-semibold">{item.name}</p>
-                        <p className="text-sm text-gray-500">
-                          x{item.quantity} @ Rp {item.price.toLocaleString()}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                <p className="text-right font-bold text-green-600 mt-2">
-                  Total: Rp {order.total.toLocaleString()}
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                      <p className="font-bold text-lg">Total: Rp {order.total.toLocaleString()}</p>
+                  </div>
+                  {/* Tombol hanya muncul untuk buyer, bukan admin */}
+                  {user?.role !== 'admin' && order.status === 'menunggu konfirmasi' && order.snap_token && (
+                    <Button onClick={() => handleRetryPayment(order.id, order.snap_token!)}>
+                      Lanjutkan Pembayaran
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
     </div>
-  )
+  );
 }
