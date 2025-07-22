@@ -10,8 +10,8 @@ import { useCart } from "@/lib/cartStore";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const { refresh, count, setCount } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCartCount = async () => {
@@ -22,10 +22,7 @@ export default function Navbar() {
 
       try {
         const snapshot = await getDocs(collection(db, "cart", user.email!, "items"));
-        let total = 0;
-        snapshot.forEach(doc => {
-          total += doc.data().quantity || 1;
-        });
+        const total = snapshot.docs.reduce((acc, doc) => acc + (doc.data().quantity || 1), 0);
         setCount(total);
       } catch (err) {
         console.error("Gagal mengambil jumlah cart:", err);
@@ -35,9 +32,13 @@ export default function Navbar() {
     fetchCartCount();
   }, [user, refresh, setCount]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await logout(); // ini harus async biar nunggu logout selesai
+      navigate("/login"); // pindah ke login page
+    } catch (err) {
+      console.error("Logout gagal:", err);
+    }
   };
 
   const CartLink = (
@@ -57,21 +58,24 @@ export default function Navbar() {
         Furniture.go
       </Link>
 
-      {/* Desktop */}
+      {/* Desktop Nav */}
       <div className="hidden md:flex items-center space-x-4">
-        <Link to="/" className="text-sm font-medium">Beranda</Link>
-
-        {user?.role === "admin" && (
-          <Link to="/admin" className="text-sm font-medium">Dashboard</Link>
-        )}
-
-        {user?.role === "buyer" && (
+        {user?.role === "admin" ? (
           <>
-            {CartLink}
-            <Link to="/orders" className="text-sm font-medium">Pesanan Saya</Link>
+            <Link to="/admin" className="text-sm font-medium">Dashboard</Link>
+            <Link to="/admin/orders" className="text-sm font-medium">Pesanan</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/" className="text-sm font-medium">Beranda</Link>
+            {user?.role === "buyer" && (
+              <>
+                {CartLink}
+                <Link to="/orders" className="text-sm font-medium">Pesanan Saya</Link>
+              </>
+            )}
           </>
         )}
-
         {user ? (
           <Button size="sm" variant="outline" onClick={handleLogout}>
             Logout
@@ -84,7 +88,7 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Mobile */}
+      {/* Mobile Nav */}
       <div className="md:hidden">
         <Sheet>
           <SheetTrigger asChild>
@@ -92,19 +96,22 @@ export default function Navbar() {
           </SheetTrigger>
           <SheetContent side="right" className="w-64">
             <div className="mt-6 space-y-4 flex flex-col">
-              <Link to="/" onClick={() => navigate("/")}>Beranda</Link>
-
-              {user?.role === "admin" && (
-                <Link to="/admin" onClick={() => navigate("/admin")}>Dashboard</Link>
-              )}
-
-              {user?.role === "buyer" && (
+              {user?.role === "admin" ? (
                 <>
-                  {CartLink}
-                  <Link to="/orders">Pesanan Saya</Link>
+                  <Link to="/admin">Dashboard</Link>
+                  <Link to="/admin/orders">Pesanan</Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/">Beranda</Link>
+                  {user?.role === "buyer" && (
+                    <>
+                      {CartLink}
+                      <Link to="/orders">Pesanan Saya</Link>
+                    </>
+                  )}
                 </>
               )}
-
               {user ? (
                 <Button variant="destructive" onClick={handleLogout} className="w-full">
                   Logout

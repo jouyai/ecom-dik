@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface Order {
   id: string
+  user?: string
   items: {
     name: string
     quantity: number
@@ -25,29 +26,43 @@ interface Order {
 }
 
 export default function MyOrders() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
+  const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return
 
-      const q = query(
-        collection(db, "orders"),
-        where("user", "==", user.email),
-        orderBy("createdAt", "desc")
-      )
+      try {
+        let q;
+        if (user.role === "admin") {
+          // Admin ambil semua pesanan
+          q = query(collection(db, "orders"), orderBy("createdAt", "desc"))
+        } else {
+          // Buyer hanya pesanannya sendiri
+          q = query(
+            collection(db, "orders"),
+            where("user", "==", user.email),
+            orderBy("createdAt", "desc")
+          )
+        }
 
-      const snapshot = await getDocs(q)
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Order, "id">),
-      }))
-      setOrders(data)
+        const snapshot = await getDocs(q)
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...(doc.data() as Omit<Order, "id">),
+        }))
+        setOrders(data)
+      } catch (err) {
+        console.error("Gagal fetch orders:", err)
+      } finally {
+        setFetching(false)
+      }
     }
 
-    fetchOrders()
-  }, [user])
+    if (!loading) fetchOrders()
+  }, [user, loading])
 
   const formatDate = (timestamp?: Timestamp) => {
     if (!timestamp) return "-"
@@ -59,9 +74,15 @@ export default function MyOrders() {
     })
   }
 
+  if (loading || fetching) {
+    return <p className="text-center text-gray-500 mt-10">Memuat pesanan...</p>
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Pesanan Saya</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {user?.role === "admin" ? "Log Pesanan" : "Pesanan Saya"}
+      </h1>
 
       {orders.length === 0 ? (
         <p className="text-gray-500">Belum ada pesanan.</p>
@@ -74,6 +95,12 @@ export default function MyOrders() {
                   <p>ID: {order.id}</p>
                   <p>{formatDate(order.createdAt)}</p>
                 </div>
+
+                {user?.role === "admin" && (
+                  <p className="text-sm text-gray-700">
+                    <strong>Email Pembeli:</strong> {order.user || "Tidak diketahui"}
+                  </p>
+                )}
 
                 <span className="inline-block text-sm text-white bg-blue-600 px-2 py-0.5 rounded">
                   {order.status || "diproses"}

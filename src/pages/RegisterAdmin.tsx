@@ -3,15 +3,15 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Link, useNavigate } from "react-router-dom"
 import { auth, db } from "@/lib/firebase"
-import { createUserWithEmailAndPassword } from "firebase/auth"
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
 import { toast } from "sonner"
 import { FirebaseError } from "firebase/app"
 
-export default function Register() {
+export default function RegisterAdmin() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [username, setUsername] = useState("")
+  const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -23,15 +23,17 @@ export default function Register() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const uid = userCredential.user.uid
 
-      const userData = {
+      await updateProfile(userCredential.user, { displayName: name })
+
+      const adminData = {
         email,
-        username,
-        role: "buyer", // default role
+        name,
+        role: "admin",
       }
 
-      await setDoc(doc(db, "users", uid), userData)
+      await setDoc(doc(db, "admins", uid), adminData)
 
-      toast.success("Registrasi berhasil!")
+      toast.success("Registrasi admin berhasil!")
       navigate("/login")
     } catch (err) {
       let errorMessage = "Terjadi kesalahan saat registrasi."
@@ -60,12 +62,12 @@ export default function Register() {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 border rounded-xl shadow space-y-4">
-      <h1 className="text-2xl font-bold text-center">Daftar Akun</h1>
+      <h1 className="text-2xl font-bold text-center">Daftar Admin</h1>
       <form onSubmit={handleRegister} className="space-y-4">
         <Input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Nama Lengkap"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           required
         />
         <Input
@@ -83,12 +85,12 @@ export default function Register() {
           required
         />
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Mendaftarkan..." : "Register"}
+          {loading ? "Mendaftarkan..." : "Register Admin"}
         </Button>
         <p className="text-sm text-center text-gray-600">
-          Sudah punya akun?{" "}
-          <Link to="/login" className="text-green-600 hover:underline">
-            Login di sini
+          Ingin daftar sebagai user biasa?{" "}
+          <Link to="/register" className="text-green-600 hover:underline">
+            Klik di sini
           </Link>
         </p>
       </form>

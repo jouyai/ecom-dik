@@ -1,9 +1,9 @@
-import { create } from "zustand"
-import { onAuthStateChanged } from "firebase/auth"
-import { auth, db } from "@/lib/firebase"
-import { doc, getDoc } from "firebase/firestore"
+import { create } from "zustand";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
-type Role = "admin" | "buyer" | null
+type Role = "admin" | "buyer" | null;
 
 interface User {
   displayName: string;
@@ -16,35 +16,59 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   setUser: (email: string, username: string, role: Role, displayName: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   loading: true,
+
   setUser: (email, username, role, displayName) =>
-    set({ user: { email, username, role, displayName }, loading: false }),
-  logout: () => {
-    auth.signOut();
-    document.getElementById("tawk-script")?.remove();
-    const iframe = document.querySelector("iframe[src*='tawk']");
-    if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
-    set({ user: null, loading: false });
-  }
+    set({
+      user: { email, username, role, displayName },
+      loading: false,
+    }),
+
+  logout: async () => {
+    try {
+      await signOut(auth); // firebase sign out
+      document.getElementById("tawk-script")?.remove();
+      const iframe = document.querySelector("iframe[src*='tawk']");
+      if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
+
+      set({ user: null, loading: false });
+      // no reload, state akan berubah otomatis dan bisa di-handle di komponen (misal: pakai navigate("/login"))
+    } catch (err) {
+      console.error("Gagal logout:", err);
+    }
+  },
 }));
 
+// Auto sync user dari Firebase
 onAuthStateChanged(auth, async (firebaseUser) => {
   if (firebaseUser) {
-    const ref = doc(db, "users", firebaseUser.uid);
-    const snap = await getDoc(ref);
-    const data = snap.exists() ? snap.data() : { role: "buyer", username: "Unknown" };
+    try {
+      let ref = doc(db, "users", firebaseUser.uid);
+      let snap = await getDoc(ref);
+      let data;
 
-    useAuth.getState().setUser(
-      firebaseUser.email!,
-      data.username,
-      data.role,
-      firebaseUser.displayName || "Guest"
-    );
+      if (snap.exists()) {
+        data = snap.data();
+      } else {
+        ref = doc(db, "admins", firebaseUser.uid);
+        snap = await getDoc(ref);
+        data = snap.exists() ? snap.data() : { role: null, username: "Unknown" };
+      }
+
+      useAuth.getState().setUser(
+        firebaseUser.email!,
+        data.username,
+        data.role,
+        firebaseUser.displayName || "Guest"
+      );
+    } catch (err) {
+      console.error("Gagal ambil user:", err);
+    }
   } else {
     useAuth.setState({ user: null, loading: false });
   }

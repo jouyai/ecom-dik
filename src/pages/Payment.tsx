@@ -8,6 +8,7 @@ import {
   deleteDoc,
   doc,
   addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -95,8 +96,6 @@ export default function Payment() {
             email: user.email,
             callback_urls: {
               finish: "https://ecom-dik.vercel.app/thanks",
-              pending: "https://ecom-dik.vercel.app/pending",
-              error: "https://ecom-dik.vercel.app/error",
             },
           }),
         }
@@ -113,7 +112,7 @@ export default function Payment() {
             total,
             paymentMethod: "MIDTRANS",
             status: "sudah dibayar",
-            createdAt: new Date(),
+            createdAt: serverTimestamp(),
             snap_result: result,
           });
 
@@ -128,7 +127,7 @@ export default function Payment() {
             total,
             paymentMethod: "MIDTRANS",
             status: "menunggu konfirmasi",
-            createdAt: new Date(),
+            createdAt: serverTimestamp(),
             snap_result: result,
           });
 

@@ -14,7 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { setUser } = useAuth()
+  const { setUser, logout } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,13 +25,24 @@ export default function Login() {
       const user = userCredential.user
       const uid = user.uid
 
-      const userDoc = await getDoc(doc(db, "users", uid))
-      if (!userDoc.exists()) throw new Error("User tidak ditemukan di database.")
+      // Cari user di users, jika tidak ada cek di admins
+      let userDoc = await getDoc(doc(db, "users", uid));
+      let userData;
+      if (userDoc.exists()) {
+        userData = userDoc.data();
+      } else {
+        userDoc = await getDoc(doc(db, "admins", uid));
+        if (!userDoc.exists()) {
+          logout(); // Paksa logout jika tidak ditemukan di Firestore
+          throw new Error("User tidak ditemukan di database.");
+        }
+        userData = userDoc.data();
+      }
 
-      const { role, username } = userDoc.data()
-      const displayName = user.displayName || "Guest"
+      const { role, username } = userData;
+      const displayName = user.displayName || "Guest";
 
-      setUser(email, username, role, displayName)
+      setUser(email, username, role, displayName);
 
       toast.success("Login berhasil!")
       navigate("/")
