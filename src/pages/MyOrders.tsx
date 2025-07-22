@@ -6,14 +6,12 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 
-// Deklarasikan window.snap agar TypeScript tidak error
 declare global {
   interface Window {
     snap: any;
   }
 }
 
-// Definisikan tipe data untuk pesanan
 interface OrderItem {
   id: string;
   name: string;
@@ -24,18 +22,19 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  user?: string; // User email
+  user?: string;
   items: OrderItem[];
   total: number;
   status: string;
   createdAt: Timestamp;
-  snap_token?: string; // Token bisa jadi tidak ada di pesanan lama
+  snap_token?: string;
 }
 
 export default function PesananSaya() {
   const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -43,7 +42,6 @@ export default function PesananSaya() {
       setFetching(true);
       try {
         let q;
-        // Jika user adalah admin, ambil semua pesanan. Jika bukan, ambil pesanan milik user tsb.
         if (user.role === "admin") {
           q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
         } else {
@@ -72,7 +70,6 @@ export default function PesananSaya() {
     }
   }, [user, authLoading]);
   
-  // Fungsi untuk memicu ulang pembayaran
   const handleRetryPayment = (orderId: string, snapToken: string) => {
     if (!window.snap) {
         toast.error("Layanan pembayaran tidak tersedia saat ini.");
@@ -87,7 +84,6 @@ export default function PesananSaya() {
                 snap_result: result,
             });
             toast.success("Pembayaran berhasil!");
-            // Refresh data tanpa reload halaman
             setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: 'sudah dibayar'} : o));
         },
         onPending: (_result: any) => {
@@ -100,6 +96,29 @@ export default function PesananSaya() {
             toast.info("Anda menutup jendela pembayaran.");
         }
     });
+  };
+
+  const handleCheckStatus = async (orderId: string) => {
+    setCheckingStatus(orderId);
+    toast.info("Memeriksa status pembayaran...");
+    try {
+        const res = await fetch(`https://midtrans-dika-production.up.railway.app/api/check-status/${orderId}`);
+        
+        if (!res.ok) {
+            throw new Error("Gagal menghubungi server.");
+        }
+
+        const data = await res.json();
+        const newStatus = data.new_status;
+
+        setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: newStatus} : o));
+        toast.success(`Status pesanan berhasil diperbarui menjadi: ${newStatus.replace("_", " ")}`);
+
+    } catch (error: any) {
+        toast.error(`Gagal memeriksa status: ${error.message}`);
+    } finally {
+        setCheckingStatus(null);
+    }
   };
 
   const formatDate = (timestamp?: Timestamp) => {
@@ -156,12 +175,25 @@ export default function PesananSaya() {
                   <div>
                       <p className="font-bold text-lg">Total: Rp {order.total.toLocaleString()}</p>
                   </div>
-                  {/* Tombol hanya muncul untuk buyer, bukan admin */}
-                  {user?.role !== 'admin' && order.status === 'menunggu konfirmasi' && order.snap_token && (
-                    <Button onClick={() => handleRetryPayment(order.id, order.snap_token!)}>
-                      Lanjutkan Pembayaran
-                    </Button>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {/* --- PENAMBAHAN TOMBOL BARU --- */}
+                    {user?.role !== 'admin' && order.status === 'menunggu konfirmasi' && (
+                        <>
+                            <Button 
+                                variant="outline" 
+                                onClick={() => handleCheckStatus(order.id)}
+                                disabled={checkingStatus === order.id}
+                            >
+                                {checkingStatus === order.id ? 'Memeriksa...' : 'Periksa Status'}
+                            </Button>
+                            {order.snap_token && (
+                                <Button onClick={() => handleRetryPayment(order.id, order.snap_token!)}>
+                                Lanjutkan Pembayaran
+                                </Button>
+                            )}
+                        </>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
