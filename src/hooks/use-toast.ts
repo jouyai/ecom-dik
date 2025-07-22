@@ -184,7 +184,7 @@ function createNotification(props: Omit<ToasterNotification, "id">) {
  * Main API for displaying notifications.
  * @example notification.success({ title: "Product added!" })
  */
-export const notification = {
+export const toast = {
   /** Displays a success notification (e.g., payment successful, item added to cart). */
   success: (props: NotificationProps) => {
     return createNotification({ ...props, variant: 'success' });
