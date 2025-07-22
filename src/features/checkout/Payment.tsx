@@ -86,12 +86,17 @@ export default function Payment() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            order_id: orderId,
-            gross_amount: total,
-            name: user.displayName || user.username || "Pelanggan",
-            email: user.email,
-            // Pastikan finish URL sudah benar
-            finish: "https://ecom-dik.vercel.app/thanks",
+            transaction_details: {
+              order_id: orderId,
+              gross_amount: total,
+            },
+            customer_details: {
+              first_name: user.displayName || user.username || "Pelanggan",
+              email: user.email,
+            },
+            callbacks: {
+              finish: "https://ecom-dik.vercel.app/thanks",
+            }
           }),
         }
       );
