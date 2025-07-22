@@ -12,7 +12,7 @@ export default function RegisterAdmin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [username, setUsername] = useState(""); // State baru untuk username
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 

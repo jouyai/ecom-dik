@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { FirebaseError } from "firebase/app";
 
 export default function Login() {
-  const [identifier, setIdentifier] = useState(""); // Bisa email atau username
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -31,12 +31,8 @@ export default function Login() {
       const isEmail = /\S+@\S+\.\S+/.test(identifier);
 
       if (isEmail) {
-        // Jika input adalah email, langsung gunakan untuk login.
         emailToLogin = identifier;
       } else {
-        // Jika bukan email, anggap sebagai username dan cari emailnya.
-        // PENTING: Ini membutuhkan aturan keamanan Firestore yang mengizinkan query
-        // pada koleksi 'admins' dan 'users' oleh pengguna yang belum terotentikasi.
         
         const adminQuery = query(collection(db, "admins"), where("username", "==", identifier));
         const userQuery = query(collection(db, "users"), where("username", "==", identifier));
@@ -47,24 +43,19 @@ export default function Login() {
         ]);
 
         if (!adminSnapshot.empty) {
-          // Username admin ditemukan
           const adminData = adminSnapshot.docs[0].data();
           emailToLogin = adminData.email;
         } else if (!userSnapshot.empty) {
-          // Username pembeli ditemukan, ini tidak diizinkan untuk login
           throw new Error("Pembeli harus login menggunakan email, bukan username.");
         } else {
-          // Tidak ada pengguna atau admin yang ditemukan dengan username ini
           throw new Error("Username tidak ditemukan.");
         }
       }
 
-      // Lakukan proses login dengan email yang sudah didapatkan
       const userCredential = await signInWithEmailAndPassword(auth, emailToLogin, password);
       const loggedInUser = userCredential.user;
       const uid = loggedInUser.uid;
 
-      // Setelah berhasil login, cari data pengguna di Firestore berdasarkan UID
       let userDoc = await getDoc(doc(db, "users", uid));
       let userData;
 

@@ -30,7 +30,7 @@ export default function Register() {
       const userData = {
         email,
         username,
-        role: "buyer", // default role
+        role: "buyer",
       };
 
       await setDoc(doc(db, "users", uid), userData);

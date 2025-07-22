@@ -32,7 +32,7 @@ export default function Checkout() {
   useEffect(() => {
     const fetchCart = async () => {
       if (!user) {
-        setCart([]); // Pastikan keranjang kosong jika tidak ada user
+        setCart([]);
         return;
       }
       try {

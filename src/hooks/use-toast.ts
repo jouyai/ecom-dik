@@ -1,6 +1,5 @@
 "use client"
 
-// Adapted from react-hot-toast and customized for e-commerce notifications.
 import * as React from "react"
 
 import type {
@@ -11,11 +10,8 @@ import type {
 const NOTIFICATION_LIMIT = 3
 const NOTIFICATION_REMOVE_DELAY = 8000
 
-// Defines the variants of notifications that can appear on the e-commerce site.
 export type NotificationVariant = "success" | "info" | "warning" | "error"
 
-// The core fix is here: We use Omit<> to remove the original 'variant' property
-// from NotificationComponentProps before adding our own to prevent a type conflict.
 type ToasterNotification = Omit<NotificationComponentProps, "variant"> & {
   id: string
   title?: React.ReactNode
@@ -145,12 +141,10 @@ function dispatch(action: Action) {
   })
 }
 
-// Base properties for creating a new notification.
 type NotificationProps = Omit<ToasterNotification, "id" | "variant"> & {
     title: React.ReactNode;
 };
 
-// Internal function to create and dispatch a notification.
 function createNotification(props: Omit<ToasterNotification, "id">) {
   const id = genId()
 

@@ -19,7 +19,6 @@ interface Product {
   description: string;
 }
 
-// Skeleton component for loading state
 const ProductDetailSkeleton = () => (
     <div className="container mx-auto px-4 py-12">
         <Skeleton className="h-6 w-1/3 mb-8 bg-stone-200" />
@@ -50,7 +49,7 @@ export default function ProductDetail() {
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
-      setQuantity(1); // Reset quantity on new product
+      setQuantity(1);
       if (!id) return;
 
       try {
@@ -60,17 +59,16 @@ export default function ProductDetail() {
           const fetchedProduct = { id: snap.id, ...snap.data() } as Product;
           setProduct(fetchedProduct);
 
-          // Fetch related products
           const q = query(
             collection(db, "products"),
             where("category", "==", fetchedProduct.category),
-            limit(5) // Fetch 5 to have 4 related items even if one is the current product
+            limit(5)
           );
           const relSnap = await getDocs(q);
           const relItems = relSnap.docs
             .map((doc) => ({ id: doc.id, ...doc.data() } as Product))
             .filter((p) => p.id !== fetchedProduct.id)
-            .slice(0, 4); // Ensure only 4 items are shown
+            .slice(0, 4);
 
           setRelatedProducts(relItems);
         } else {

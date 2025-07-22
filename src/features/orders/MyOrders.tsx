@@ -23,20 +23,19 @@ interface OrderItem {
 }
 
 interface Order {
-  id: string; // Ini adalah ID Dokumen Firestore
+  id: string;
   user?: string;
   items: OrderItem[];
   total: number;
   status: string;
   createdAt: Timestamp;
   snap_token?: string;
-  snap_result?: { // Menambahkan snap_result ke interface
-    order_id: string; // Ini adalah Order ID Midtrans
+  snap_result?: {
+    order_id: string;
     [key: string]: any;
   };
 }
 
-// Helper function to format status from backend
 const formatStatus = (status: string) => {
     return status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 }
@@ -70,7 +69,7 @@ export default function PesananSaya() {
               return { 
                   id: doc.id, 
                   ...data,
-                  status: formatStatus(data.status) // Format status on fetch
+                  status: formatStatus(data.status)
               } as Order
           });
         
@@ -184,7 +183,6 @@ export default function PesananSaya() {
     } catch (error: any) {
         toast.error(`Gagal Memeriksa Status: ${error.message}`);
     } finally {
-        // PERBAIKAN: Set status kembali ke null untuk menghentikan spinner
         setCheckingStatus(null);
     }
   };

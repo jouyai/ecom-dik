@@ -1,6 +1,5 @@
-// pages/admin/dashboard.tsx (Contoh path file)
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase"; // Pastikan path ini benar
+import { db } from "@/lib/firebase";
 import {
   collection,
   addDoc,
@@ -12,7 +11,6 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
-// Import komponen UI dari shadcn/ui
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,7 +28,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-// 1. Definisikan interface untuk produk (stok juga dihapus)
 interface Product {
   id: string;
   name: string;
@@ -42,7 +39,6 @@ interface Product {
   createdAt?: Timestamp;
 }
 
-// State untuk form
 type ProductFormState = Omit<Product, "id" | "createdAt">;
 
 const INITIAL_FORM_STATE: ProductFormState = {
@@ -54,7 +50,6 @@ const INITIAL_FORM_STATE: ProductFormState = {
   isPublished: true,
 };
 
-// 2. Komponen Form dibuat terpisah agar lebih rapi
 const ProductForm = ({
   onSubmit,
   initialData,
@@ -76,7 +71,6 @@ const ProductForm = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
-    // @ts-ignore
     const isCheckbox = type === "checkbox";
     setForm((prev) => ({
       ...prev,
@@ -86,7 +80,6 @@ const ProductForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Konversi harga ke number, stok sudah tidak ada
     const numericForm = {
       ...form,
       price: Number(form.price) || 0,
@@ -186,7 +179,6 @@ const ProductForm = ({
   );
 };
 
-// 3. Komponen Tabel dibuat terpisah untuk menampilkan data
 const ProductTable = ({
   products,
   onEdit,
@@ -259,7 +251,6 @@ const ProductTable = ({
   </Card>
 );
 
-// 4. Komponen Utama Dashboard yang menggabungkan semuanya
 export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -281,12 +272,10 @@ export default function AdminDashboard() {
     setIsLoading(true);
     try {
       if (editingProduct) {
-        // Update
         const productRef = doc(db, "products", editingProduct.id);
         await updateDoc(productRef, data);
         toast.success("Produk berhasil diupdate!");
       } else {
-        // Create
         await addDoc(collection(db, "products"), {
           ...data,
           createdAt: serverTimestamp(),
@@ -305,7 +294,7 @@ export default function AdminDashboard() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Auto-scroll ke atas
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
@@ -325,7 +314,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Menyiapkan data untuk form. Jika sedang edit, isi dengan data produk. Jika tidak, gunakan state kosong.
   const formInitialData = editingProduct
     ? { ...INITIAL_FORM_STATE, ...editingProduct }
     : INITIAL_FORM_STATE;

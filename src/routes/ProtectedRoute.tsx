@@ -10,15 +10,12 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
 
   if (loading) return <div className="text-center p-6">Loading...</div>;
 
-  // Belum login
   if (!user) return <Navigate to="/login" replace />;
 
-  // Role tidak sesuai
   if (allowedRoles && !allowedRoles.includes(user.role as any)) {
     const redirectPath = user.role === "admin" ? "/admin" : "/";
     return <Navigate to={redirectPath} replace />;
   }
 
-  // Lolos semua cek
   return <Outlet />;
 }

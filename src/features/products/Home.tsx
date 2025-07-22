@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight } from "lucide-react";
 import { Link as ScrollLink } from "react-scroll";
 
-// 1. Interface diperbarui dengan 'isPublished'
 interface Product {
   id: string;
   name: string;
@@ -16,7 +15,7 @@ interface Product {
   price: number;
   image: string;
   description: string;
-  isPublished: boolean; // <-- Ditambahkan
+  isPublished: boolean;
 }
 
 export default function Home() {
@@ -40,15 +39,12 @@ export default function Home() {
             } as Product)
         );
 
-        // 2. Filter produk untuk hanya menampilkan yang 'isPublished: true'
         const publishedProducts = allProductsData.filter(
           (p) => p.isPublished === true
         );
 
-        // Atur state dengan data yang sudah difilter
         setProducts(publishedProducts);
 
-        // Buat daftar kategori unik dari produk yang sudah dipublikasikan
         const uniqueCategories = [
           "all",
           ...Array.from(new Set(publishedProducts.map((p) => p.category))),
@@ -65,7 +61,6 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  // Tidak perlu diubah, karena 'products' sudah berisi data yang published
   const filteredProducts =
     selectedCategory === "all"
       ? products

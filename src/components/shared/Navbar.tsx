@@ -16,7 +16,6 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useCart } from "@/context/cartStore";
 
-// Komponen NavLink untuk menghindari repetisi kode styling
 const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) => (
   <Link
     to={to}
@@ -64,7 +63,6 @@ export default function Navbar() {
     }
   };
 
-  // Komponen Ikon Keranjang dengan Badge
   const CartIcon = ({ isMobile = false }: { isMobile?: boolean }) => (
     <Link to="/checkout" className="relative group flex items-center">
       <div className="relative">
@@ -79,7 +77,6 @@ export default function Navbar() {
     </Link>
   );
 
-  // Menu untuk pengguna yang sudah login
   const UserMenuDesktop = (
     <div className="flex items-center gap-x-5">
       {user?.role === "buyer" && <CartIcon />}
@@ -119,7 +116,6 @@ export default function Navbar() {
     </div>
   );
 
-  // Menu untuk pengguna yang belum login
   const GuestMenuDesktop = (
     <div className="flex items-center gap-x-5">
       <NavLink to="/">Beranda</NavLink>
@@ -132,7 +128,6 @@ export default function Navbar() {
     </div>
   );
 
-  // Menu mobile
   const MobileMenu = (
      <Sheet>
         <SheetTrigger asChild>

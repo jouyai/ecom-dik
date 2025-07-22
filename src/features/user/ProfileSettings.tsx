@@ -35,13 +35,10 @@ export default function ProfileSettings() {
     try {
       const userRef = doc(db, user.role === 'admin' ? "admins" : "users", auth.currentUser.uid);
       
-      // Update Firestore
       await updateDoc(userRef, { username });
       
-      // Update Firebase Auth profile
       await updateProfile(auth.currentUser, { displayName: username });
 
-      // Update state lokal di Zustand/Context
       setUser(user.email, username, user.role, username);
 
       toast.success("Profil berhasil diperbarui!");

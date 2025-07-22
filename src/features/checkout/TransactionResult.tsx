@@ -1,10 +1,8 @@
-// src/pages/TransactionResult.tsx
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle, Clock, XCircle } from "lucide-react";
 import type { JSX } from "react/jsx-runtime";
 
-// Definisikan tipe untuk detail status menggunakan interface
 interface StatusDetails {
   icon: JSX.Element;
   title: string;
@@ -12,7 +10,6 @@ interface StatusDetails {
   color: string;
 }
 
-// Gunakan Record<string, StatusDetails> untuk type-safety pada map
 const statusMap: Record<string, StatusDetails> = {
   settlement: {
     icon: <CheckCircle className="h-16 w-16" />,
@@ -38,7 +35,6 @@ const statusMap: Record<string, StatusDetails> = {
     message: "Maaf, pembayaran Anda ditolak. Silakan coba lagi dengan metode pembayaran lain.",
     color: "text-red-500",
   },
-  // Tambahkan status lain dari Midtrans jika perlu (expire, cancel)
   default: {
     icon: <XCircle className="h-16 w-16" />,
     title: "Terjadi Kesalahan",
@@ -50,7 +46,6 @@ const statusMap: Record<string, StatusDetails> = {
 export default function TransactionResult() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // Gunakan useState dengan tipe yang sudah didefinisikan
   const [details, setDetails] = useState<StatusDetails | null>(null);
 
   useEffect(() => {

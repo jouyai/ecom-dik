@@ -35,7 +35,7 @@ export default function Payment() {
   const isSnapReady = useMidtransSnap();
   const { user } = useAuth();
   const { toggleRefresh } = useCart();
-  const navigate = useNavigate(); // Tambahkan kembali useNavigate
+  const navigate = useNavigate();
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -118,7 +118,6 @@ export default function Payment() {
             user: user.email, items: cart, total, paymentMethod: "MIDTRANS", status: "menunggu konfirmasi", createdAt: serverTimestamp(), snap_result: result, snap_token: snapToken,
           });
           await clearCart();
-          // PERBAIKAN: Ubah notifikasi dan arahkan ke halaman pesanan
           toast.info("Pesanan Anda telah dibuat. Silakan selesaikan pembayaran.");
           navigate("/pesanan-saya");
         },
