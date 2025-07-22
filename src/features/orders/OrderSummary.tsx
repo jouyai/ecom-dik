@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { db } from "@/lib/firebase"
 import { useAuth } from "@/context/auth"
-import { useCart } from "@/lib/cartStore"
+import { useCart } from "@/context/cartStore"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import {

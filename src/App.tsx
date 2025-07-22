@@ -1,21 +1,25 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import RegisterAdmin from "@/pages/RegisterAdmin";
-import AdminDashboard from "@/pages/admin/Dashboard";
-import Checkout from "@/pages/Checkout";
+import Home from "@/features/products/Home";
+import Login from "@/features/auth/Login";
+import Register from "@/features/auth/Register";
+import RegisterAdmin from "@/features/auth/RegisterAdmin";
+import AdminDashboard from "@/features/admin/Dashboard";
+import Checkout from "@/features/checkout/Checkout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
-import ProductDetail from "@/pages/ProductDetail";
-import Navbar from "@/components/Navbar";
-import Shipping from "./pages/Shipping";
-import Payment from "@/pages/Payment";
-import TransactionResult from "@/pages/TransactionResult";
-import OrderSummary from "@/pages/OrderSummary";
-import MyOrders from "@/pages/MyOrders";
-import Footer from "@/components/Footer";
+import ProductDetail from "@/features/products/ProductDetail";
+import Navbar from "@/components/shared/Navbar";
+import Shipping from "@/features/checkout/Shipping";
+import Payment from "@/features/checkout/Payment";
+import TransactionResult from "@/features/checkout/TransactionResult";
+import OrderSummary from "@/features/orders/OrderSummary";
+import MyOrders from "@/features/orders/MyOrders";
+import Footer from "@/components/shared/Footer";
 import { useAuth } from "@/context/auth";
 import { useEffect } from "react";
+import ScrollToTop from "@/components/shared/ScrollToTop";
+import ProfileSettings from "@/features/user/ProfileSettings";
+import GuestRoute from "@/routes/GuestRoute";
+import AppLoader from "./components/shared/AppLoader";
 
 export default function AppRoutes() {
   const { user, loading } = useAuth();
@@ -40,7 +44,7 @@ export default function AppRoutes() {
   }, [user?.role]);
 
   if (loading) {
-    return <div className="text-center p-10">Loading...</div>;
+    return <AppLoader />;
   }
 
   return (
@@ -48,11 +52,24 @@ export default function AppRoutes() {
       <Navbar />
       <div className="flex flex-col min-h-screen">
         <main className="flex-grow">
+          <ScrollToTop />
           <Routes>
             {/* Auth routes (selalu bisa diakses) */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/register-admin" element={<RegisterAdmin />} />
+            <Route path="/" element={<Home />} />
+
+            {/* Rute khusus untuk GUEST (pengguna yang belum login) */}
+            <Route element={<GuestRoute />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/register-admin" element={<RegisterAdmin />} />
+            </Route>
+
+            {/* Rute yang dilindungi untuk semua user yang login */}
+            <Route
+              element={<ProtectedRoute allowedRoles={["admin", "buyer"]} />}
+            >
+              <Route path="/profile" element={<ProfileSettings />} />
+            </Route>
 
             {/* Admin-only routes */}
             <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
@@ -71,7 +88,10 @@ export default function AppRoutes() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/shipping" element={<Shipping />} />
               <Route path="/payment" element={<Payment />} />
-              <Route path="/order-summary/:orderId" element={<OrderSummary />} />
+              <Route
+                path="/order-summary/:orderId"
+                element={<OrderSummary />}
+              />
               <Route path="/orders" element={<MyOrders />} />
               <Route path="/thanks" element={<TransactionResult />} />
             </Route>
