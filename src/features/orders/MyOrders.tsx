@@ -36,6 +36,11 @@ interface Order {
   };
 }
 
+// Helper function to format status from backend
+const formatStatus = (status: string) => {
+    return status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+}
+
 export default function PesananSaya() {
   const isSnapReady = useMidtransSnap();
   const { user, loading: authLoading } = useAuth();
@@ -60,7 +65,14 @@ export default function PesananSaya() {
 
         const querySnapshot = await getDocs(q);
         const userOrders = querySnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Order));
+          .map(doc => {
+              const data = doc.data();
+              return { 
+                  id: doc.id, 
+                  ...data,
+                  status: formatStatus(data.status) // Format status on fetch
+              } as Order
+          });
         
         setOrders(userOrders);
       } catch (error) {
@@ -84,7 +96,7 @@ export default function PesananSaya() {
     try {
         let tokenToUse = order.snap_token;
 
-        if (order.status === 'gagal' || order.status === 'expired') {
+        if (order.status === 'Gagal' || order.status === 'Expired') {
             toast.info("Membuat sesi pembayaran baru...");
             const newOrderId = `RETRY-${order.id.substring(0, 8)}-${Date.now()}`;
             const res = await fetch("https://midtrans-dika-production.up.railway.app/api/create-transaction", {
@@ -104,7 +116,7 @@ export default function PesananSaya() {
             tokenToUse = data.token;
             const orderRef = doc(db, "orders", order.id);
             await updateDoc(orderRef, { snap_token: tokenToUse, status: 'menunggu konfirmasi' });
-            setOrders(prev => prev.map(o => o.id === order.id ? {...o, snap_token: tokenToUse, status: 'menunggu konfirmasi'} : o));
+            setOrders(prev => prev.map(o => o.id === order.id ? {...o, snap_token: tokenToUse, status: 'Menunggu Konfirmasi'} : o));
         }
 
         if (!tokenToUse) {
@@ -115,31 +127,31 @@ export default function PesananSaya() {
             onSuccess: async (result: any) => {
                 const orderRef = doc(db, "orders", order.id);
                 await updateDoc(orderRef, { status: "sudah dibayar", snap_result: result });
-                toast.success("Pembayaran berhasil!");
-                setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: 'sudah dibayar'} : o));
+                toast.success("Pembayaran Berhasil!");
+                setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: 'Sudah Dibayar'} : o));
             },
             onPending: (_result: any) => {
-                toast.info("Status pembayaran masih menunggu konfirmasi.");
+                toast.info("Status Pembayaran Masih Menunggu Konfirmasi.");
             },
             onError: async (_result: any) => {
                 const orderRef = doc(db, "orders", order.id);
                 await updateDoc(orderRef, { status: "gagal" });
-                toast.error("Pembayaran gagal.");
-                setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: 'gagal'} : o));
+                toast.error("Pembayaran Gagal.");
+                setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: 'Gagal'} : o));
             },
             onClose: async () => {
                 const orderRef = doc(db, "orders", order.id);
                 const currentOrder = orders.find(o => o.id === order.id);
-                if (currentOrder && currentOrder.status !== 'sudah dibayar') {
+                if (currentOrder && currentOrder.status !== 'Sudah Dibayar') {
                     await updateDoc(orderRef, { status: "gagal" });
-                    toast.info("Pembayaran dibatalkan dan ditandai sebagai gagal.");
-                    setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: 'gagal'} : o));
+                    toast.info("Pembayaran Dibatalkan dan Ditandai Sebagai Gagal.");
+                    setOrders(prev => prev.map(o => o.id === order.id ? {...o, status: 'Gagal'} : o));
                 }
             }
         });
 
     } catch (error: any) {
-        toast.error(`Gagal memproses pembayaran: ${error.message}`);
+        toast.error(`Gagal Memproses Pembayaran: ${error.message}`);
     } finally {
         setPayingOrder(null);
     }
@@ -164,13 +176,13 @@ export default function PesananSaya() {
         }
 
         const data = await res.json();
-        const newStatus = data.new_status;
+        const newStatus = formatStatus(data.new_status);
 
         setOrders(prevOrders => prevOrders.map(o => o.id === order.id ? {...o, status: newStatus} : o));
-        toast.success(`Status pesanan berhasil diperbarui menjadi: ${newStatus.replace("_", " ")}`);
+        toast.success(`Status Pesanan Berhasil Diperbarui Menjadi: ${newStatus}`);
 
     } catch (error: any) {
-        toast.error(`Gagal memeriksa status: ${error.message}`);
+        toast.error(`Gagal Memeriksa Status: ${error.message}`);
     } finally {
         setCheckingStatus(order.id);
     }
@@ -185,11 +197,11 @@ export default function PesananSaya() {
 
   const getStatusClass = (status: string) => {
     switch (status) {
-        case 'sudah dibayar':
+        case 'Sudah Dibayar':
             return 'bg-green-100 text-green-800';
-        case 'menunggu konfirmasi':
+        case 'Menunggu Konfirmasi':
             return 'bg-yellow-100 text-yellow-800';
-        case 'gagal':
+        case 'Gagal':
             return 'bg-red-100 text-red-800';
         default:
             return 'bg-gray-100 text-gray-800';
@@ -223,7 +235,7 @@ export default function PesananSaya() {
                     )}
                   </div>
                   <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusClass(order.status)}`}>
-                    {order.status.replace("_", " ")}
+                    {order.status}
                   </span>
                 </div>
                 
@@ -244,9 +256,9 @@ export default function PesananSaya() {
                       <p className="font-bold text-lg">Total: Rp {order.total.toLocaleString()}</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {user?.role !== 'admin' && (order.status === 'menunggu konfirmasi' || order.status === 'gagal') && (
+                    {user?.role !== 'admin' && (order.status === 'Menunggu Konfirmasi' || order.status === 'Gagal') && (
                         <>
-                            {order.status === 'menunggu konfirmasi' && 
+                            {order.status === 'Menunggu Konfirmasi' && 
                                 <Button 
                                     variant="outline" 
                                     onClick={() => handleCheckStatus(order)}
@@ -261,7 +273,7 @@ export default function PesananSaya() {
                                 disabled={!isSnapReady || payingOrder === order.id}
                             >
                                 {payingOrder === order.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {order.status === 'gagal' ? 'Coba Bayar Lagi' : 'Lanjutkan Pembayaran'}
+                                {order.status === 'Gagal' ? 'Coba Bayar Lagi' : 'Lanjutkan Pembayaran'}
                             </Button>
                         </>
                     )}
