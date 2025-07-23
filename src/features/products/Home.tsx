@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +20,6 @@ interface Product {
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,18 +31,12 @@ export default function Home() {
 
     const fetchProducts = async () => {
       setLoading(true);
-      try {
-        const newArrivalsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(4));
-        
+      try {        
         const allProductsQuery = collection(db, "products");
 
-        const [newArrivalsSnapshot, allProductsSnapshot] = await Promise.all([
-            getDocs(newArrivalsQuery),
+        const [allProductsSnapshot] = await Promise.all([
             getDocs(allProductsQuery)
         ]);
-
-        const newArrivalsData = newArrivalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-        setNewArrivals(newArrivalsData);
         
         const allProductsData = allProductsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
         setProducts(allProductsData);
@@ -102,41 +95,6 @@ export default function Home() {
             Lihat Koleksi <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </Button>
         </ScrollLink>
-      </section>
-
-      {/* New Arrivals Section */}
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">Produk Terbaru</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {loading ? (
-            Array.from({ length: 4 }).map((_, i) => <ProductSkeleton key={i} />)
-          ) : (
-            newArrivals.map((product) => (
-              <Card
-                key={product.id}
-                className="group overflow-hidden border-stone-200 rounded-lg shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer"
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="w-full h-52 bg-stone-100 overflow-hidden">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-5 space-y-2">
-                    <p className="text-xs text-stone-500 uppercase tracking-wider">{product.category}</p>
-                    <h2 className="text-lg font-semibold text-stone-800 truncate">{product.name}</h2>
-                    <p className="text-xl font-bold text-amber-700">
-                      Rp {product.price.toLocaleString()}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
       </section>
 
       {/* All Products Section */}
