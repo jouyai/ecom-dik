@@ -51,8 +51,8 @@ Selamat datang di **Furniture.go**, sebuah platform e-commerce modern yang diran
 
 #### a. Clone Repositori
 ```bash
-git clone [URL_REPOSITORI_ANDA]
-cd [NAMA_FOLDER_FRONTEND]
+git clone https://github.com/jouyai/ecom-dik.git
+cd ecom-dik
 ```
 
 #### b. Instal Dependensi
@@ -132,15 +132,14 @@ export default tseslint.config([
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
-      ...tseslint.configs.recommendedTypeChecked,
-      // atau lebih ketat:
-      // ...tseslint.configs.strictTypeChecked,
+      js.configs.recommended,
+      tseslint.configs.recommended,
+      reactHooks.configs['recommended-latest'],
+      reactRefresh.configs.vite,
     ],
     languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
+      ecmaVersion: 2020,
+      globals: globals.browser,
     },
   },
 ]);
