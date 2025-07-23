@@ -1,21 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Award, Truck, Headset, Star } from "lucide-react";
+import { ArrowRight, Award, Truck, Headset } from "lucide-react";
 import { Link as ScrollLink } from "react-scroll";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
-import { baseTestimonials } from "@/data/testimonials";
 
 interface Product {
   id: string;
@@ -24,7 +15,7 @@ interface Product {
   price: number;
   image: string;
   description: string;
-  createdAt?: any; // Tambahkan untuk pengurutan
+  createdAt?: any;
 }
 
 export default function Home() {
@@ -35,15 +26,6 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(true);
   
   const navigate = useNavigate();
-
-  const autoplayPlugin = useRef(
-    Autoplay({ 
-      delay: 3000, 
-      stopOnInteraction: true,
-      stopOnMouseEnter: false,
-      playOnInit: true,
-    })
-  );
 
   useEffect(() => {
     document.title = "Furniture | Home";
@@ -95,8 +77,6 @@ export default function Home() {
     </div>
   );
   
-  const testimonials = [...baseTestimonials, ...baseTestimonials];
-
   return (
     <div className="bg-stone-50">
       {/* Hero Section */}
@@ -244,50 +224,6 @@ export default function Home() {
             </div>
         </div>
       </section>
-
-      {/* Testimonials Section */}
-      {/* <section className="bg-stone-50 py-20">
-        <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold text-stone-800 mb-4">Apa Kata Mereka?</h2>
-            <p className="max-w-2xl mx-auto text-stone-600 mb-12">
-                Cerita dari para pelanggan yang telah mempercayakan kami untuk mengisi rumah mereka.
-            </p>
-            <Carousel
-              plugins={[autoplayPlugin.current]}
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              className="w-full max-w-4xl mx-auto"
-            >
-              <CarouselContent>
-                {testimonials.map((testimonial, index) => (
-                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                    <div className="p-1">
-                      <Card className="bg-white text-left p-6 border-stone-200 shadow-sm h-full">
-                        <CardContent className="p-0 flex flex-col h-full">
-                          <div className="flex text-amber-500 mb-4">
-                            {[...Array(5)].map((_, i) => <Star key={i} fill="currentColor" />)}
-                          </div>
-                          <p className="text-stone-600 italic flex-grow">"{testimonial.quote}"</p>
-                          <div className="flex items-center mt-6">
-                            <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full mr-4" />
-                            <div>
-                              <p className="font-semibold text-stone-800">{testimonial.name}</p>
-                              <p className="text-sm text-stone-500">{testimonial.title}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="hidden sm:flex" />
-              <CarouselNext className="hidden sm:flex" />
-            </Carousel>
-        </div>
-      </section> */}
     </div>
   );
 }
