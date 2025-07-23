@@ -49,6 +49,8 @@ export default function TransactionResult() {
   const [details, setDetails] = useState<StatusDetails | null>(null);
 
   useEffect(() => {
+    document.title = "Furniture | Transaction Result";
+
     const status = searchParams.get("transaction_status") || "default";
     setDetails(statusMap[status] || statusMap.default);
 

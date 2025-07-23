@@ -42,6 +42,8 @@ export default function Payment() {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   useEffect(() => {
+    document.title = "Furniture | Payment";
+    
     const fetchCart = async () => {
       if (!user) return;
       try {

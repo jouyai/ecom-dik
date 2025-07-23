@@ -48,6 +48,8 @@ export default function PesananSaya() {
   const [payingOrder, setPayingOrder] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = "Furniture | Pesanan Saya";
+    
     const fetchOrders = async () => {
       if (!user) return;
       try {

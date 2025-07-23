@@ -17,6 +17,8 @@ export default function Login() {
   const { user, setUser, logout } = useAuth();
 
   useEffect(() => {
+    document.title = "Furniture | Login";
+    
     if (user) {
       logout();
     }

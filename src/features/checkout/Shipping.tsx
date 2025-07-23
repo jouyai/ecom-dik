@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/auth";
@@ -20,6 +20,10 @@ export default function Shipping() {
     city: "",
     postalCode: "",
   });
+
+  useEffect(() => {
+    document.title = "Furniture | Shipping";
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });

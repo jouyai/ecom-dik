@@ -47,6 +47,8 @@ export default function ProductDetail() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Furniture | Product Detail";
+
     const fetchProduct = async () => {
       setLoading(true);
       setQuantity(1);

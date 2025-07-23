@@ -39,6 +39,8 @@ export default function OrderSummary() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    document.title = "Furniture | Order Summary"
+    
     const fetchCartAndShipping = async () => {
       if (!user) return
 

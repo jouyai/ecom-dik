@@ -64,6 +64,8 @@ const ProductForm = ({
   const [form, setForm] = useState(initialData);
 
   useEffect(() => {
+    document.title = "Furniture | Dashboard";
+
     setForm(initialData);
   }, [initialData]);
 

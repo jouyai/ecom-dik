@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight } from "lucide-react";
-import { Link as ScrollLink } from "react-scroll";
+import { ArrowRight, Award, Truck, Headset, Star } from "lucide-react";
+import { Link as ScrollLink } from "react-scroll"; 
 
 interface Product {
   id: string;
@@ -15,7 +15,6 @@ interface Product {
   price: number;
   image: string;
   description: string;
-  isPublished: boolean;
 }
 
 export default function Home() {
@@ -27,30 +26,26 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Furniture | Home";
+
     const fetchProducts = async () => {
       setLoading(true);
       try {
         const snapshot = await getDocs(collection(db, "products"));
-        const allProductsData = snapshot.docs.map(
+        const data = snapshot.docs.map(
           (doc) =>
             ({
               id: doc.id,
               ...(doc.data() as Omit<Product, "id">),
             } as Product)
         );
-
-        const publishedProducts = allProductsData.filter(
-          (p) => p.isPublished === true
-        );
-
-        setProducts(publishedProducts);
+        setProducts(data);
 
         const uniqueCategories = [
           "all",
-          ...Array.from(new Set(publishedProducts.map((p) => p.category))),
+          ...Array.from(new Set(data.map((p) => p.category))),
         ];
         setCategories(uniqueCategories);
-
       } catch (error) {
         console.error("Gagal memuat produk:", error);
       } finally {
@@ -60,7 +55,7 @@ export default function Home() {
 
     fetchProducts();
   }, []);
-// ar_bdrt
+
   const filteredProducts =
     selectedCategory === "all"
       ? products
@@ -68,7 +63,7 @@ export default function Home() {
 
   const ProductSkeleton = () => (
     <div className="space-y-4">
-      <Skeleton className="w-full h-64 bg-stone-200" />
+      <Skeleton className="w-full h-52 bg-stone-200" />
       <Skeleton className="h-6 w-3/4 bg-stone-200" />
       <Skeleton className="h-4 w-1/2 bg-stone-200" />
       <Skeleton className="h-10 w-full bg-stone-200" />
@@ -90,7 +85,7 @@ export default function Home() {
           to="products-section"
           smooth={true}
           duration={500}
-          offset={-80}
+          offset={-80} 
           spy={true}
         >
           <Button 
@@ -133,7 +128,7 @@ export default function Home() {
                 onClick={() => navigate(`/product/${product.id}`)}
               >
                 <CardContent className="p-0">
-                  <div className="w-full h-64 bg-stone-100 overflow-hidden">
+                  <div className="w-full h-52 bg-stone-100 overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}
@@ -159,6 +154,108 @@ export default function Home() {
           )}
         </div>
       </main>
+
+      {/* Why Choose Us Section */}
+      <section className="bg-white py-20">
+        <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold text-stone-800 mb-4">Kenapa Memilih Kami?</h2>
+            <p className="max-w-2xl mx-auto text-stone-600 mb-12">
+                Kami berkomitmen untuk memberikan yang terbaik bagi setiap sudut rumah Anda.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                <div className="flex flex-col items-center">
+                    <div className="bg-amber-100 p-4 rounded-full mb-4">
+                        <Award className="h-8 w-8 text-amber-700" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-stone-800">Kualitas Terbaik</h3>
+                    <p className="text-stone-600 mt-2">Setiap produk dibuat dengan material pilihan dan pengerjaan yang teliti.</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <div className="bg-amber-100 p-4 rounded-full mb-4">
+                        <Truck className="h-8 w-8 text-amber-700" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-stone-800">Pengiriman Cepat</h3>
+                    <p className="text-stone-600 mt-2">Pesanan Anda kami antar dengan aman dan tepat waktu ke seluruh Indonesia.</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <div className="bg-amber-100 p-4 rounded-full mb-4">
+                        <Headset className="h-8 w-8 text-amber-700" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-stone-800">Layanan Pelanggan</h3>
+                    <p className="text-stone-600 mt-2">Tim kami siap membantu Anda 24/7 untuk menjawab setiap pertanyaan.</p>
+                </div>
+            </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="bg-stone-50 py-20">
+        <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold text-stone-800 mb-4">Apa Kata Mereka?</h2>
+            <p className="max-w-2xl mx-auto text-stone-600 mb-12">
+                Cerita dari para pelanggan yang telah mempercayakan kami untuk mengisi rumah mereka.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Card className="bg-white text-left p-6 border-stone-200 shadow-sm">
+                    <CardContent className="p-0">
+                        <div className="flex text-amber-500 mb-4">
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                        </div>
+                        <p className="text-stone-600 italic">"Sofa yang saya beli sangat nyaman dan mengubah total suasana ruang keluarga. Kualitasnya melebihi ekspektasi!"</p>
+                        <div className="flex items-center mt-6">
+                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Pelanggan 1" className="w-12 h-12 rounded-full mr-4" />
+                            <div>
+                                <p className="font-semibold text-stone-800">Sarah Wijayanti</p>
+                                <p className="text-sm text-stone-500">Pemilik Rumah, Jakarta</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-white text-left p-6 border-stone-200 shadow-sm">
+                    <CardContent className="p-0">
+                        <div className="flex text-amber-500 mb-4">
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                        </div>
+                        <p className="text-stone-600 italic">"Proses pembelian sangat mudah dan pengirimannya cepat. Meja makannya pas sekali untuk dapur saya. Terima kasih!"</p>
+                        <div className="flex items-center mt-6">
+                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704e" alt="Pelanggan 2" className="w-12 h-12 rounded-full mr-4" />
+                            <div>
+                                <p className="font-semibold text-stone-800">Budi Santoso</p>
+                                <p className="text-sm text-stone-500">Desainer Interior</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-white text-left p-6 border-stone-200 shadow-sm">
+                    <CardContent className="p-0">
+                        <div className="flex text-amber-500 mb-4">
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                            <Star fill="currentColor" />
+                        </div>
+                        <p className="text-stone-600 italic">"Layanan pelanggannya sangat responsif. Mereka membantu saya memilih lemari yang tepat. Sangat direkomendasikan."</p>
+                        <div className="flex items-center mt-6">
+                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704f" alt="Pelanggan 3" className="w-12 h-12 rounded-full mr-4" />
+                            <div>
+                                <p className="font-semibold text-stone-800">Rina Hartono</p>
+                                <p className="text-sm text-stone-500">Pengusaha Kafe, Bandung</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -30,6 +30,8 @@ export default function Checkout() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Furniture | Checkout";
+    
     const fetchCart = async () => {
       if (!user) {
         setCart([]);
