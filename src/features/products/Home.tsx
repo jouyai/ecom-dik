@@ -246,7 +246,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="bg-stone-50 py-20">
+      {/* <section className="bg-stone-50 py-20">
         <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold text-stone-800 mb-4">Apa Kata Mereka?</h2>
             <p className="max-w-2xl mx-auto text-stone-600 mb-12">
@@ -287,7 +287,7 @@ export default function Home() {
               <CarouselNext className="hidden sm:flex" />
             </Carousel>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

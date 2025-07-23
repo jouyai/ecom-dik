@@ -1,55 +1,52 @@
-
 # 🪑 Furniture.go - Platform E-Commerce Furnitur
 
-Selamat datang di **Furniture.go**, sebuah platform e-commerce modern yang dirancang untuk menjual produk furnitur. Proyek ini dibangun dengan tumpukan teknologi modern, mencakup otentikasi pengguna, manajemen produk, alur checkout yang lengkap dengan integrasi payment gateway, serta dasbor admin.
+Selamat datang di **Furniture.go**, platform e-commerce modern untuk penjualan produk furnitur. Proyek ini dibangun dengan stack teknologi modern, mendukung otentikasi pengguna, manajemen produk, checkout terintegrasi payment gateway, serta dasbor admin.
 
 ## ✨ Fitur Utama
 
-* **Otentikasi Pengguna & Admin**: Sistem registrasi dan login yang aman untuk pembeli dan admin, dengan peran yang terpisah.
-* **Login Fleksibel**: Admin dapat login menggunakan email atau username, sementara pembeli menggunakan email.
-* **Pengecekan Real-time**: Pengecekan ketersediaan username dan email secara otomatis saat pendaftaran untuk mencegah duplikasi.
+* **Otentikasi Pengguna & Admin**: Registrasi dan login aman untuk pembeli dan admin, dengan peran terpisah.
+* **Login Fleksibel**: Admin dapat login via email atau username, pembeli via email.
+* **Pengecekan Real-time**: Validasi ketersediaan username/email saat pendaftaran.
 * **Halaman Beranda Dinamis**:
-    * Menampilkan produk terbaru secara otomatis.
-    * Katalog semua produk dengan filter berdasarkan kategori.
-    * Carousel testimoni pelanggan yang bergerak otomatis untuk membangun kepercayaan.
-* **Manajemen Keranjang**: Fungsionalitas tambah, hapus, dan ubah jumlah produk di keranjang.
+    * Produk terbaru otomatis tampil.
+    * Katalog produk dengan filter kategori.
+    * Carousel testimoni pelanggan otomatis.
+* **Manajemen Keranjang**: Tambah, hapus, dan ubah jumlah produk di keranjang.
 * **Alur Checkout Lengkap**:
     * Pengisian alamat pengiriman.
     * Konfirmasi pesanan.
     * Integrasi pembayaran dengan **Midtrans Snap**.
-* **Riwayat Pesanan**: Pengguna dapat melihat riwayat pesanan mereka, memeriksa status pembayaran secara real-time, dan mencoba membayar ulang pesanan yang gagal atau kedaluwarsa.
+* **Riwayat Pesanan**: Pengguna dapat melihat riwayat, status pembayaran real-time, dan membayar ulang pesanan gagal/kedaluwarsa.
 * **Menu & Pengaturan Profil**:
-    * Dropdown menu profil yang intuitif.
-    * Halaman di mana pengguna dapat memperbarui informasi profil mereka seperti username.
-* **Desain Responsif**: Tampilan yang dioptimalkan untuk perangkat desktop maupun mobile.
+    * Dropdown menu profil.
+    * Halaman update profil (misal username).
+* **Desain Responsif**: Optimal untuk desktop & mobile.
 
 ## 🛠️ Tumpukan Teknologi
 
 ### Frontend (Klien)
-* **Framework**: React (dengan Vite)
-* **Bahasa**: TypeScript
-* **Styling**: Tailwind CSS
-* **Komponen UI**: shadcn/ui & sonner (untuk notifikasi)
-* **Manajemen State**: Zustand
-* **Navigasi**: React Router DOM
-* **Animasi Scroll**: React Scroll
-* **Carousel**: Embla Carousel
+- **Framework**: React (Vite)
+- **Bahasa**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI**: shadcn/ui, sonner (notifikasi)
+- **State Management**: Zustand
+- **Routing**: React Router DOM
+- **Animasi Scroll**: React Scroll
+- **Carousel**: Embla Carousel
 
 ### Backend (Server)
-* **Framework**: Node.js & Express.js
-* **Payment Gateway**: Midtrans (Snap & Core API)
-* **Otentikasi & Database**: Firebase (Authentication & Firestore)
+- **Framework**: Node.js & Express.js
+- **Payment Gateway**: Midtrans (Snap & Core API)
+- **Otentikasi & Database**: Firebase (Authentication & Firestore)
 
-### Platform Deploy
-* **Frontend**: Vercel
-* **Backend**: Railway
+### Deploy
+- **Frontend**: Vercel
+- **Backend**: Railway
 
 ## 🚀 Instalasi & Konfigurasi
 
-Untuk menjalankan proyek ini di lingkungan lokal, ikuti langkah-langkah berikut untuk frontend dan backend.
-
 ### 1. Frontend (React)
-**Prasyarat**: Node.js versi 18 atau lebih tinggi.
+**Prasyarat**: Node.js v18+
 
 a. **Clone Repositori**
 ```bash
@@ -62,18 +59,15 @@ b. **Instal Dependensi**
 npm install
 ```
 
-c. **Konfigurasi Environment Variables**
-Buat file `.env` di root direktori frontend dan isi dengan variabel berikut:
+c. **Konfigurasi Environment**
+Buat file `.env` di root frontend:
 ```env
-# Kunci dari proyek Firebase Anda
-VITE_FIREBASE_API_KEY=AIzaSy...
+VITE_FIREBASE_API_KEY=...
 VITE_FIREBASE_AUTH_DOMAIN=...
 VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_STORAGE_BUCKET=...
 VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
-
-# Kunci dari Dashboard Midtrans (Sandbox)
 VITE_MIDTRANS_CLIENT_KEY=SB-Mid-client-...
 ```
 
@@ -81,10 +75,10 @@ d. **Jalankan Proyek**
 ```bash
 npm run dev
 ```
-Aplikasi akan berjalan di `http://localhost:5173`.
+Akses di `http://localhost:5173`.
 
 ### 2. Backend (Node.js)
-**Prasyarat**: Node.js versi 18 atau lebih tinggi.
+**Prasyarat**: Node.js v18+
 
 a. **Pindah ke Direktori Backend**
 ```bash
@@ -96,31 +90,25 @@ b. **Instal Dependensi**
 npm install
 ```
 
-c. **Konfigurasi Environment Variables**
-Buat file `.env` di root direktori backend dan isi dengan variabel berikut:
+c. **Konfigurasi Environment**
+Buat file `.env` di root backend:
 ```env
-# Kunci dari Dashboard Midtrans (Sandbox)
 MIDTRANS_SERVER_KEY=SB-Mid-server-...
 MIDTRANS_CLIENT_KEY=SB-Mid-client-...
-
-# Kredensial Firebase Admin SDK
 GOOGLE_CREDENTIALS_JSON={"type": "service_account", ...}
-
 PORT=5000
 ```
 
 d. **Tambahkan `serviceAccountKey.json`**
-Unduh file kunci service account dari **Firebase Console > Project Settings > Service accounts**, ganti namanya menjadi `serviceAccountKey.json`, dan letakkan di root direktori backend.
+Unduh dari Firebase Console, rename jadi `serviceAccountKey.json`, letakkan di root backend.
 
 e. **Jalankan Server**
 ```bash
 npm start
 ```
-Server akan berjalan di `http://localhost:5000`.
+Server di `http://localhost:5000`.
 
 ## 📁 Struktur Proyek
-
-Proyek ini menggunakan struktur folder berbasis fitur (*feature-based*) yang terorganisir untuk memudahkan pengelolaan dan pengembangan.
 
 ```
 src/
