@@ -1,12 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Award, Truck, Headset, Star } from "lucide-react";
-import { Link as ScrollLink } from "react-scroll"; 
+import { Link as ScrollLink } from "react-scroll";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import { baseTestimonials } from "@/data/testimonials";
 
 interface Product {
   id: string;
@@ -15,15 +24,26 @@ interface Product {
   price: number;
   image: string;
   description: string;
+  createdAt?: any; // Tambahkan untuk pengurutan
 }
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [newArrivals, setNewArrivals] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
   const navigate = useNavigate();
+
+  const autoplayPlugin = useRef(
+    Autoplay({ 
+      delay: 3000, 
+      stopOnInteraction: true,
+      stopOnMouseEnter: false,
+      playOnInit: true,
+    })
+  );
 
   useEffect(() => {
     document.title = "Furniture | Home";
@@ -31,19 +51,24 @@ export default function Home() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const snapshot = await getDocs(collection(db, "products"));
-        const data = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...(doc.data() as Omit<Product, "id">),
-            } as Product)
-        );
-        setProducts(data);
+        const newArrivalsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"), limit(4));
+        
+        const allProductsQuery = collection(db, "products");
+
+        const [newArrivalsSnapshot, allProductsSnapshot] = await Promise.all([
+            getDocs(newArrivalsQuery),
+            getDocs(allProductsQuery)
+        ]);
+
+        const newArrivalsData = newArrivalsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        setNewArrivals(newArrivalsData);
+        
+        const allProductsData = allProductsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        setProducts(allProductsData);
 
         const uniqueCategories = [
           "all",
-          ...Array.from(new Set(data.map((p) => p.category))),
+          ...Array.from(new Set(allProductsData.map((p) => p.category))),
         ];
         setCategories(uniqueCategories);
       } catch (error) {
@@ -69,6 +94,8 @@ export default function Home() {
       <Skeleton className="h-10 w-full bg-stone-200" />
     </div>
   );
+  
+  const testimonials = [...baseTestimonials, ...baseTestimonials];
 
   return (
     <div className="bg-stone-50">
@@ -97,8 +124,44 @@ export default function Home() {
         </ScrollLink>
       </section>
 
-      {/* Products Section */}
+      {/* New Arrivals Section */}
+      <section className="container mx-auto px-4 py-12">
+        <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">Produk Terbaru</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {loading ? (
+            Array.from({ length: 4 }).map((_, i) => <ProductSkeleton key={i} />)
+          ) : (
+            newArrivals.map((product) => (
+              <Card
+                key={product.id}
+                className="group overflow-hidden border-stone-200 rounded-lg shadow-sm hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                onClick={() => navigate(`/product/${product.id}`)}
+              >
+                <CardContent className="p-0">
+                  <div className="w-full h-52 bg-stone-100 overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-5 space-y-2">
+                    <p className="text-xs text-stone-500 uppercase tracking-wider">{product.category}</p>
+                    <h2 className="text-lg font-semibold text-stone-800 truncate">{product.name}</h2>
+                    <p className="text-xl font-bold text-amber-700">
+                      Rp {product.price.toLocaleString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* All Products Section */}
       <main id="products-section" className="container mx-auto px-4 py-12">
+        <h2 className="text-3xl font-bold text-stone-800 mb-8 text-center">Semua Produk</h2>
         {/* Filter Kategori */}
         <div className="mb-10 flex justify-center flex-wrap gap-3">
           {categories.map((cat) => (
@@ -141,12 +204,6 @@ export default function Home() {
                     <p className="text-xl font-bold text-amber-700">
                       Rp {product.price.toLocaleString()}
                     </p>
-                    <Button
-                      variant="outline"
-                      className="w-full !mt-4 border-stone-800 text-stone-800 hover:bg-stone-800 hover:text-white"
-                    >
-                      Lihat Detail
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -195,65 +252,40 @@ export default function Home() {
             <p className="max-w-2xl mx-auto text-stone-600 mb-12">
                 Cerita dari para pelanggan yang telah mempercayakan kami untuk mengisi rumah mereka.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <Card className="bg-white text-left p-6 border-stone-200 shadow-sm">
-                    <CardContent className="p-0">
-                        <div className="flex text-amber-500 mb-4">
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                        </div>
-                        <p className="text-stone-600 italic">"Sofa yang saya beli sangat nyaman dan mengubah total suasana ruang keluarga. Kualitasnya melebihi ekspektasi!"</p>
-                        <div className="flex items-center mt-6">
-                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Pelanggan 1" className="w-12 h-12 rounded-full mr-4" />
+            <Carousel
+              plugins={[autoplayPlugin.current]}
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full max-w-4xl mx-auto"
+            >
+              <CarouselContent>
+                {testimonials.map((testimonial, index) => (
+                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-1">
+                      <Card className="bg-white text-left p-6 border-stone-200 shadow-sm h-full">
+                        <CardContent className="p-0 flex flex-col h-full">
+                          <div className="flex text-amber-500 mb-4">
+                            {[...Array(5)].map((_, i) => <Star key={i} fill="currentColor" />)}
+                          </div>
+                          <p className="text-stone-600 italic flex-grow">"{testimonial.quote}"</p>
+                          <div className="flex items-center mt-6">
+                            <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full mr-4" />
                             <div>
-                                <p className="font-semibold text-stone-800">Sarah Wijayanti</p>
-                                <p className="text-sm text-stone-500">Pemilik Rumah, Jakarta</p>
+                              <p className="font-semibold text-stone-800">{testimonial.name}</p>
+                              <p className="text-sm text-stone-500">{testimonial.title}</p>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-white text-left p-6 border-stone-200 shadow-sm">
-                    <CardContent className="p-0">
-                        <div className="flex text-amber-500 mb-4">
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                        </div>
-                        <p className="text-stone-600 italic">"Proses pembelian sangat mudah dan pengirimannya cepat. Meja makannya pas sekali untuk dapur saya. Terima kasih!"</p>
-                        <div className="flex items-center mt-6">
-                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704e" alt="Pelanggan 2" className="w-12 h-12 rounded-full mr-4" />
-                            <div>
-                                <p className="font-semibold text-stone-800">Budi Santoso</p>
-                                <p className="text-sm text-stone-500">Desainer Interior</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-white text-left p-6 border-stone-200 shadow-sm">
-                    <CardContent className="p-0">
-                        <div className="flex text-amber-500 mb-4">
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                            <Star fill="currentColor" />
-                        </div>
-                        <p className="text-stone-600 italic">"Layanan pelanggannya sangat responsif. Mereka membantu saya memilih lemari yang tepat. Sangat direkomendasikan."</p>
-                        <div className="flex items-center mt-6">
-                            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704f" alt="Pelanggan 3" className="w-12 h-12 rounded-full mr-4" />
-                            <div>
-                                <p className="font-semibold text-stone-800">Rina Hartono</p>
-                                <p className="text-sm text-stone-500">Pengusaha Kafe, Bandung</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden sm:flex" />
+              <CarouselNext className="hidden sm:flex" />
+            </Carousel>
         </div>
       </section>
     </div>
