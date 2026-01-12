@@ -15,33 +15,14 @@ import OrderSummary from "@/features/orders/OrderSummary";
 import MyOrders from "@/features/orders/MyOrders";
 import Footer from "@/components/shared/Footer";
 import { useAuth } from "@/context/auth";
-import { useEffect } from "react";
 import ScrollToTop from "@/components/shared/ScrollToTop";
 import ProfileSettings from "@/features/user/ProfileSettings";
 import GuestRoute from "@/routes/GuestRoute";
 import AppLoader from "./components/shared/AppLoader";
+import ChatWidget from "@/components/shared/ChatWidget";
 
 export default function AppRoutes() {
   const { user, loading } = useAuth();
-
-  useEffect(() => {
-    if (user?.role === "buyer") {
-      if (!document.getElementById("tawk-script")) {
-        const s1 = document.createElement("script");
-        s1.async = true;
-        s1.src = "https://embed.tawk.to/6872b8c2e8509719117220b2/1j0023e90";
-        s1.charset = "UTF-8";
-        s1.setAttribute("crossorigin", "*");
-        s1.id = "tawk-script";
-        document.body.appendChild(s1);
-      }
-    } else {
-      const tawkScript = document.getElementById("tawk-script");
-      if (tawkScript) tawkScript.remove();
-      const iframe = document.querySelector("iframe[src*='tawk']");
-      if (iframe?.parentNode) iframe.parentNode.removeChild(iframe);
-    }
-  }, [user?.role]);
 
   if (loading) {
     return <AppLoader />;
@@ -99,6 +80,9 @@ export default function AppRoutes() {
         </main>
         <Footer />
       </div>
+      {/* Pasang Chatbot disini agar muncul di atas segalanya */}
+      {/* Opsional: Render hanya jika user adalah buyer atau guest */}
+      {(!user || user.role === "buyer") && <ChatWidget />}
     </>
   );
 }
