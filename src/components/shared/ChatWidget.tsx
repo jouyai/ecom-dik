@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageCircle, X, Send, Loader2, Minimize2 } from "lucide-react"; // Tambah icon Minimize
+import { MessageCircle, X, Send, Loader2, Minimize2 } from "lucide-react";
 import { sendMessageToAI } from "@/lib/gemini";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
