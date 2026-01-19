@@ -24,7 +24,7 @@ const useMidtransSnap = () => {
     } else {
       script = document.createElement('script');
       script.id = scriptId;
-      script.src = 'https://app.sandbox.midtrans.com/snap/snap.js';
+      script.src = 'https://app.midtrans.com/snap/snap.js'; 
       script.setAttribute('data-client-key', clientKey);
       script.async = true;
       

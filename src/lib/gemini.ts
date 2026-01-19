@@ -4,12 +4,10 @@ import { collection, getDocs } from "firebase/firestore";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 
-// Cache sederhana untuk menyimpan data produk sementara
 let cachedProductContext: string | null = null;
 let lastFetchTime = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 menit
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Fungsi ambil data produk (sama seperti sebelumnya)
 async function getProductContext() {
   const now = Date.now();
   if (cachedProductContext && (now - lastFetchTime < CACHE_DURATION)) {
@@ -42,29 +40,32 @@ async function getProductContext() {
 
 export const sendMessageToAI = async (message: string, history: any[]) => {
   try {
-    // --- PERUBAHAN DISINI: Ganti model ke 'gemini-1.5-flash' ---
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     
     const productData = await getProductContext();
 
     const promptWithContext = `
 Peran: Kamu adalah asisten toko "Furniture.go".
-Tugas: Jawab pertanyaan user berdasarkan DATA PRODUK berikut.
+Tugas: Jawab pertanyaan user berdasarkan DATA PRODUK dan INFO OPERASIONAL berikut.
 
 DATA PRODUK:
 ---
 ${productData}
 ---
 
+INFO OPERASIONAL:
+1. PEMBAYARAN: Kami mendukung berbagai metode pembayaran seperti BCA, BRI, MANDIRI, QRIS, dan PAYLATTER.
+2. PENGIRIMAN: Kami hanya melayani pengiriman untuk wilayah JABODETABEK. Semua pesanan akan dikirimkan secara aman menggunakan kurir internal dari toko Furniture.go sendiri.
+
 ATURAN:
-1. Hanya jawab berdasarkan data di atas.
-2. Bahasa Indonesia yang sopan.
-3. Jika produk tidak ada, katakan stok habis.
+1. Jawablah pertanyaan user hanya berdasarkan data produk dan info operasional di atas.
+2. Gunakan Bahasa Indonesia yang sopan, ramah, dan membantu.
+3. Jika produk yang ditanyakan tidak ada dalam daftar data produk, katakan bahwa stok sedang habis atau tidak tersedia.
+4. Jangan menyebutkan kata "Midtrans" dalam penjelasan pembayaran kepada user.
 
 Pertanyaan User: "${message}"
     `;
 
-    // Filter history agar pesan pertama selalu dari user (mencegah error sebelumnya)
     const firstUserIndex = history.findIndex(msg => msg.sender === "user");
     const cleanHistory = firstUserIndex !== -1 ? history.slice(firstUserIndex) : [];
 

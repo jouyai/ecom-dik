@@ -84,7 +84,7 @@ export default function Payment() {
       const orderId = `ORDER-${Date.now()}`;
 
       const res = await fetch(
-        "https://midtrans-dika-production.up.railway.app/api/create-transaction",
+        "https://jouyai-midtrans-api.hf.space/api/create-transaction",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
