@@ -15,24 +15,25 @@ interface Product {
   name: string;
   category: string;
   price: number;
-  image: string;
+  stock: number;
+  imageUrl: string;
   description: string;
 }
 
 const ProductDetailSkeleton = () => (
-    <div className="container mx-auto px-4 py-12">
-        <Skeleton className="h-6 w-1/3 mb-8 bg-stone-200" />
-        <div className="grid md:grid-cols-2 gap-12 items-start">
-            <Skeleton className="w-full h-96 bg-stone-200 rounded-lg" />
-            <div className="space-y-6">
-                <Skeleton className="h-10 w-3/4 bg-stone-200" />
-                <Skeleton className="h-6 w-1/4 bg-stone-200" />
-                <Skeleton className="h-8 w-1/3 bg-stone-200" />
-                <Skeleton className="h-24 w-full bg-stone-200" />
-                <Skeleton className="h-12 w-full bg-stone-200" />
-            </div>
-        </div>
+  <div className="container mx-auto px-4 py-12">
+    <Skeleton className="h-6 w-1/3 mb-8 bg-stone-200" />
+    <div className="grid md:grid-cols-2 gap-12 items-start">
+      <Skeleton className="w-full h-96 bg-stone-200 rounded-lg" />
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-3/4 bg-stone-200" />
+        <Skeleton className="h-6 w-1/4 bg-stone-200" />
+        <Skeleton className="h-8 w-1/3 bg-stone-200" />
+        <Skeleton className="h-24 w-full bg-stone-200" />
+        <Skeleton className="h-12 w-full bg-stone-200" />
+      </div>
     </div>
+  </div>
 );
 
 
@@ -74,13 +75,13 @@ export default function ProductDetail() {
 
           setRelatedProducts(relItems);
         } else {
-            setProduct(null);
+          setProduct(null);
         }
       } catch (error) {
-          console.error("Failed to fetch product:", error);
-          toast.error("Gagal memuat detail produk.");
+        console.error("Failed to fetch product:", error);
+        toast.error("Gagal memuat detail produk.");
       } finally {
-          setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -90,7 +91,7 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     if (!user) return toast.error("Silakan login terlebih dahulu.");
     if (!product) return;
-    
+
     try {
       const cartRef = doc(db, "cart", user.email!, "items", product.id);
       const existing = await getDoc(cartRef);
@@ -99,7 +100,7 @@ export default function ProductDetail() {
       await setDoc(cartRef, {
         name: product.name,
         price: product.price,
-        image: product.image,
+        image: product.imageUrl,
         quantity: currentQty + quantity,
       }, { merge: true });
 
@@ -124,46 +125,59 @@ export default function ProductDetail() {
       <div className="container mx-auto px-4">
         {/* Breadcrumbs */}
         <div className="flex items-center text-sm text-stone-500 mb-8">
-            <Link to="/" className="hover:text-amber-700">Beranda</Link>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="capitalize hover:text-amber-700 cursor-pointer" onClick={() => navigate(`/?category=${product.category}`)}>{product.category}</span>
-            <ChevronRight className="h-4 w-4 mx-1" />
-            <span className="text-stone-800 font-medium truncate">{product.name}</span>
+          <Link to="/" className="hover:text-amber-700">Beranda</Link>
+          <ChevronRight className="h-4 w-4 mx-1" />
+          <span className="capitalize hover:text-amber-700 cursor-pointer" onClick={() => navigate(`/?category=${product.category}`)}>{product.category}</span>
+          <ChevronRight className="h-4 w-4 mx-1" />
+          <span className="text-stone-800 font-medium truncate">{product.name}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           {/* Product Image */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
-             <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-auto max-h-[500px] object-contain rounded"
-             />
+            <img
+              src={product.imageUrl || 'https://placehold.co/500x500/e2e8f0/94a3b8?text=No+Image'}
+              alt={product.name}
+              className="w-full h-auto max-h-[500px] object-contain rounded"
+            />
           </div>
-          
+
           {/* Product Info */}
           <div className="space-y-6">
             <h1 className="text-4xl font-bold text-stone-800">{product.name}</h1>
             <p className="text-3xl font-bold text-amber-700">
               Rp {product.price.toLocaleString()}
             </p>
+            <div className="flex items-center gap-2">
+              <span className={`text-sm font-medium px-3 py-1 rounded-full ${(product.stock ?? 0) > 0
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+                }`}>
+                {(product.stock ?? 0) > 0 ? `Stok: ${product.stock}` : 'Stok Habis'}
+              </span>
+            </div>
             <div className="prose text-stone-600">
               <p>{product.description}</p>
             </div>
-            
+
             <div className="flex items-center space-x-4 pt-4">
-                <div className="flex items-center border border-stone-300 rounded-md">
-                    <Button variant="ghost" size="icon" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
-                        <Minus className="h-4 w-4"/>
-                    </Button>
-                    <span className="w-12 text-center font-semibold">{quantity}</span>
-                    <Button variant="ghost" size="icon" onClick={() => setQuantity(q => q + 1)}>
-                        <Plus className="h-4 w-4"/>
-                    </Button>
-                </div>
-                <Button size="lg" className="w-full bg-stone-800 hover:bg-stone-700 text-white" onClick={handleAddToCart}>
-                    Tambah ke Keranjang
+              <div className="flex items-center border border-stone-300 rounded-md">
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(q => Math.max(1, q - 1))} disabled={(product.stock ?? 0) === 0}>
+                  <Minus className="h-4 w-4" />
                 </Button>
+                <span className="w-12 text-center font-semibold">{quantity}</span>
+                <Button variant="ghost" size="icon" onClick={() => setQuantity(q => Math.min(product.stock ?? 0, q + 1))} disabled={quantity >= (product.stock ?? 0)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button
+                size="lg"
+                className="w-full bg-stone-800 hover:bg-stone-700 text-white disabled:opacity-50"
+                onClick={handleAddToCart}
+                disabled={(product.stock ?? 0) === 0}
+              >
+                {(product.stock ?? 0) === 0 ? 'Stok Habis' : 'Tambah ke Keranjang'}
+              </Button>
             </div>
           </div>
         </div>
@@ -182,7 +196,7 @@ export default function ProductDetail() {
                   <CardContent className="p-0">
                     <div className="w-full h-64 bg-stone-100 overflow-hidden">
                       <img
-                        src={item.image}
+                        src={item.imageUrl || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=No+Image'}
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

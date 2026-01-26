@@ -11,30 +11,45 @@ const useMidtransSnap = () => {
     const scriptId = 'midtrans-snap-script';
     const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
 
-    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
-
-    const handleLoad = () => {
+    const checkSnap = () => {
       if (window.snap) {
         setIsSnapReady(true);
+        return true;
       }
+      return false;
     };
 
+    const isSandbox = clientKey && clientKey.startsWith('SB-');
+    const scriptUrl = isSandbox
+      ? 'https://app.sandbox.midtrans.com/snap/snap.js'
+      : 'https://app.midtrans.com/snap/snap.js';
+
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    // Jika script sudah ada tapi URL-nya salah (mismatch environment), hapus dan buat baru
+    if (script && script.src !== scriptUrl) {
+      script.remove();
+      script = null;
+      window.snap = undefined;
+      setIsSnapReady(false);
+    }
+
+    if (checkSnap()) return;
+
     if (script) {
-      handleLoad();
+      const interval = setInterval(() => {
+        if (checkSnap()) clearInterval(interval);
+      }, 500);
+      setTimeout(() => clearInterval(interval), 10000);
     } else {
       script = document.createElement('script');
       script.id = scriptId;
-      script.src = 'https://app.midtrans.com/snap/snap.js'; 
+      script.src = scriptUrl;
       script.setAttribute('data-client-key', clientKey);
       script.async = true;
-      
-      script.addEventListener('load', handleLoad);
+      script.onload = () => setTimeout(checkSnap, 100);
       document.body.appendChild(script);
     }
-
-    return () => {
-      script?.removeEventListener('load', handleLoad);
-    };
   }, []);
 
   return isSnapReady;

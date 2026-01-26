@@ -16,7 +16,7 @@ async function getProductContext() {
 
   try {
     const querySnapshot = await getDocs(collection(db, "products"));
-    if (querySnapshot.empty) return "Belum ada produk.";
+    if (querySnapshot.empty) return "TIDAK ADA PRODUK TERSEDIA.";
 
     const productList = querySnapshot.docs.map(doc => {
       const data = doc.data();
@@ -25,64 +25,69 @@ async function getProductContext() {
         currency: "IDR",
         maximumFractionDigits: 0
       }).format(data.price || 0);
-      
-      return `- ${data.name} (${data.category || 'Umum'}): ${price}. \n  Desc: ${data.description || '-'}`;
-    }).join("\n\n");
+      const stock = data.stock ?? 0;
+
+      return `[${data.name}] ID:${doc.id} | ${data.category || 'Furnitur'} | ${price} | Stok: ${stock > 0 ? stock + ' unit' : 'Habis'}`;
+    }).join("\n");
 
     cachedProductContext = productList;
     lastFetchTime = now;
     return productList;
   } catch (error) {
     console.error("Error fetching products:", error);
-    return "Gagal memuat data produk.";
+    return "GAGAL MEMUAT DATA PRODUK.";
   }
 }
 
-export const sendMessageToAI = async (message: string, history: any[]) => {
+export const sendMessageToAI = async (message: string, _history: any[]) => {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    
-    const productData = await getProductContext();
-
-    const promptWithContext = `
-Peran: Kamu adalah asisten toko "Furniture.go".
-Tugas: Jawab pertanyaan user berdasarkan DATA PRODUK dan INFO OPERASIONAL berikut.
-
-DATA PRODUK:
----
-${productData}
----
-
-INFO OPERASIONAL:
-1. PEMBAYARAN: Kami mendukung berbagai metode pembayaran seperti BCA, BRI, MANDIRI, QRIS, dan PAYLATTER.
-2. PENGIRIMAN: Kami hanya melayani pengiriman untuk wilayah JABODETABEK. Semua pesanan akan dikirimkan secara aman menggunakan kurir internal dari toko Furniture.go sendiri.
-
-ATURAN:
-1. Jawablah pertanyaan user hanya berdasarkan data produk dan info operasional di atas.
-2. Gunakan Bahasa Indonesia yang sopan, ramah, dan membantu.
-3. Jika produk yang ditanyakan tidak ada dalam daftar data produk, katakan bahwa stok sedang habis atau tidak tersedia.
-4. Jangan menyebutkan kata "Midtrans" dalam penjelasan pembayaran kepada user.
-
-Pertanyaan User: "${message}"
-    `;
-
-    const firstUserIndex = history.findIndex(msg => msg.sender === "user");
-    const cleanHistory = firstUserIndex !== -1 ? history.slice(firstUserIndex) : [];
-
-    const formattedHistory = cleanHistory.map((msg) => ({
-      role: msg.sender === "user" ? "user" : "model",
-      parts: [{ text: msg.text }],
-    }));
-
-    const chat = model.startChat({
-      history: formattedHistory,
+    const model = genAI.getGenerativeModel({
+      model: "gemini-flash-latest",
+      generationConfig: {
+        temperature: 0.2,
+        topP: 0.8,
+        maxOutputTokens: 512,
+      }
     });
 
-    const result = await chat.sendMessage(promptWithContext);
+    const productData = await getProductContext();
+
+    // Dapatkan waktu saat ini untuk sapaan yang tepat
+    const now = new Date();
+    const hours = now.getHours();
+    let greeting = "Selamat malam";
+    if (hours >= 5 && hours < 11) greeting = "Selamat pagi";
+    else if (hours >= 11 && hours < 15) greeting = "Selamat siang";
+    else if (hours >= 15 && hours < 18) greeting = "Selamat sore";
+
+    const systemPrompt = `Kamu asisten toko furnitur "Furniture.go". Jam sekarang menunjukkan waktu ${greeting.toLowerCase().replace('selamat ', '')}.
+
+PRODUK TERSEDIA:
+${productData}
+
+INFO TOKO:
+- Pembayaran: BCA, BRI, Mandiri, QRIS, PayLater
+- Pengiriman: JABODETABEK saja, gratis ongkir, 2-5 hari kerja
+
+ATURAN KETAT:
+1. HANYA sebutkan produk dari daftar di atas. JANGAN mengarang produk baru.
+2. Sapaan: gunakan "${greeting}" di awal jika pelanggan menyapa.
+3. Jawab singkat, maksimal 2-3 kalimat.
+4. Saat sebut produk, tulis: [Nama Produk](/product/ID) - Harga
+5. Jika ditanya produk yang tidak ada, bilang "belum tersedia" dan tawarkan yang ada.`;
+
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: systemPrompt }] },
+        { role: "model", parts: [{ text: `${greeting}! Saya siap membantu. Ada yang bisa saya bantu?` }] },
+      ],
+    });
+
+    const result = await chat.sendMessage(message);
     const response = await result.response;
     return response.text();
   } catch (error) {
     console.error("Error sending message to AI:", error);
-    return "Maaf, ada gangguan sistem (Model Error). Coba lagi nanti.";
+    return "Maaf, ada gangguan. Silakan coba lagi.";
   }
 };

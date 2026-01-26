@@ -13,7 +13,7 @@ interface Product {
   name: string;
   category: string;
   price: number;
-  image: string;
+  imageUrl: string;
   description: string;
   createdAt?: any;
 }
@@ -23,7 +23,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,13 +31,13 @@ export default function Home() {
 
     const fetchProducts = async () => {
       setLoading(true);
-      try {        
+      try {
         const allProductsQuery = collection(db, "products");
 
         const [allProductsSnapshot] = await Promise.all([
-            getDocs(allProductsQuery)
+          getDocs(allProductsQuery)
         ]);
-        
+
         const allProductsData = allProductsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
         setProducts(allProductsData);
 
@@ -69,7 +69,7 @@ export default function Home() {
       <Skeleton className="h-10 w-full bg-stone-200" />
     </div>
   );
-  
+
   return (
     <div className="bg-stone-50">
       {/* Hero Section */}
@@ -85,11 +85,11 @@ export default function Home() {
           to="products-section"
           smooth={true}
           duration={500}
-          offset={-80} 
+          offset={-80}
           spy={true}
         >
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             className="bg-stone-800 hover:bg-stone-700 text-white group cursor-pointer"
           >
             Lihat Koleksi <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -106,11 +106,10 @@ export default function Home() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${
-                selectedCategory === cat
+              className={`px-5 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${selectedCategory === cat
                   ? "bg-stone-800 text-white shadow-md"
                   : "bg-white text-stone-700 hover:bg-stone-100 border border-stone-200"
-              }`}
+                }`}
             >
               {cat.charAt(0).toUpperCase() + cat.slice(1)}
             </button>
@@ -131,7 +130,7 @@ export default function Home() {
                 <CardContent className="p-0">
                   <div className="w-full h-52 bg-stone-100 overflow-hidden">
                     <img
-                      src={product.image}
+                      src={product.imageUrl || 'https://placehold.co/400x300/e2e8f0/94a3b8?text=No+Image'}
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -153,33 +152,33 @@ export default function Home() {
       {/* Why Choose Us Section */}
       <section className="bg-white py-20">
         <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold text-stone-800 mb-4">Kenapa Memilih Kami?</h2>
-            <p className="max-w-2xl mx-auto text-stone-600 mb-12">
-                Kami berkomitmen untuk memberikan yang terbaik bagi setiap sudut rumah Anda.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <div className="flex flex-col items-center">
-                    <div className="bg-amber-100 p-4 rounded-full mb-4">
-                        <Award className="h-8 w-8 text-amber-700" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-stone-800">Kualitas Terbaik</h3>
-                    <p className="text-stone-600 mt-2">Setiap produk dibuat dengan material pilihan dan pengerjaan yang teliti.</p>
-                </div>
-                <div className="flex flex-col items-center">
-                    <div className="bg-amber-100 p-4 rounded-full mb-4">
-                        <Truck className="h-8 w-8 text-amber-700" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-stone-800">Pengiriman Cepat</h3>
-                    <p className="text-stone-600 mt-2">Pesanan Anda kami antar dengan aman dan tepat waktu ke seluruh Indonesia.</p>
-                </div>
-                <div className="flex flex-col items-center">
-                    <div className="bg-amber-100 p-4 rounded-full mb-4">
-                        <Headset className="h-8 w-8 text-amber-700" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-stone-800">Layanan Pelanggan</h3>
-                    <p className="text-stone-600 mt-2">Tim kami siap membantu Anda 24/7 untuk menjawab setiap pertanyaan.</p>
-                </div>
+          <h2 className="text-3xl font-bold text-stone-800 mb-4">Kenapa Memilih Kami?</h2>
+          <p className="max-w-2xl mx-auto text-stone-600 mb-12">
+            Kami berkomitmen untuk memberikan yang terbaik bagi setiap sudut rumah Anda.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            <div className="flex flex-col items-center">
+              <div className="bg-amber-100 p-4 rounded-full mb-4">
+                <Award className="h-8 w-8 text-amber-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-stone-800">Kualitas Terbaik</h3>
+              <p className="text-stone-600 mt-2">Setiap produk dibuat dengan material pilihan dan pengerjaan yang teliti.</p>
             </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-amber-100 p-4 rounded-full mb-4">
+                <Truck className="h-8 w-8 text-amber-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-stone-800">Pengiriman Cepat</h3>
+              <p className="text-stone-600 mt-2">Pesanan Anda kami antar dengan aman dan tepat waktu ke seluruh Indonesia.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="bg-amber-100 p-4 rounded-full mb-4">
+                <Headset className="h-8 w-8 text-amber-700" />
+              </div>
+              <h3 className="text-lg font-semibold text-stone-800">Layanan Pelanggan</h3>
+              <p className="text-stone-600 mt-2">Tim kami siap membantu Anda 24/7 untuk menjawab setiap pertanyaan.</p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

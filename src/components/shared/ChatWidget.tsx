@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, X, Send, Loader2, Minimize2 } from "lucide-react";
@@ -14,6 +15,7 @@ type Message = {
 };
 
 export default function ChatWidget() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -32,9 +34,9 @@ export default function ChatWidget() {
   // Prevent body scroll when chat is open on mobile
   useEffect(() => {
     if (window.innerWidth < 640 && isOpen) {
-        document.body.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
     } else {
-        document.body.style.overflow = 'unset';
+      document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
@@ -74,17 +76,17 @@ export default function ChatWidget() {
       {/* Menggunakan fixed positioning terpisah agar fleksibel di mobile/desktop */}
       {isOpen && (
         <div className={cn(
-            "fixed z-50 bg-background shadow-2xl transition-all duration-300 flex flex-col overflow-hidden",
-            // MOBILE STYLES: Full screen (inset-0), rounded-none
-            "inset-0 w-full h-full rounded-none",
-            // DESKTOP STYLES (sm): Floating card, rounded-xl, limited width/height
-            "sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[400px] sm:h-[550px] sm:rounded-xl sm:border border-stone-200"
+          "fixed z-50 bg-background shadow-2xl transition-all duration-300 flex flex-col overflow-hidden",
+          // MOBILE STYLES: Full screen (inset-0), rounded-none
+          "inset-0 w-full h-full rounded-none",
+          // DESKTOP STYLES (sm): Floating card, rounded-xl, limited width/height
+          "sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[400px] sm:h-[550px] sm:rounded-xl sm:border border-stone-200"
         )}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-stone-900 text-white shrink-0">
             <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <h3 className="font-semibold text-sm">Asisten Belanja</h3>
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <h3 className="font-semibold text-sm">Asisten Belanja</h3>
             </div>
             <Button
               variant="ghost"
@@ -118,23 +120,40 @@ export default function ChatWidget() {
                     msg.text
                   ) : (
                     <div className="text-sm leading-relaxed overflow-hidden">
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          table: ({node, ...props}) => (
+                          table: ({ node, ...props }) => (
                             <div className="overflow-x-auto my-3 rounded-lg border border-stone-200 shadow-sm bg-white">
                               <table className="w-full text-xs" {...props} />
                             </div>
                           ),
-                          thead: ({node, ...props}) => <thead className="bg-stone-100 text-stone-700 font-semibold" {...props} />,
-                          tbody: ({node, ...props}) => <tbody className="divide-y divide-stone-100" {...props} />,
-                          tr: ({node, ...props}) => <tr className="hover:bg-stone-50/50 transition-colors" {...props} />,
-                          th: ({node, ...props}) => <th className="px-3 py-2 text-left whitespace-nowrap" {...props} />,
-                          td: ({node, ...props}) => <td className="px-3 py-2 align-top" {...props} />,
-                          ul: ({node, ...props}) => <ul className="list-disc pl-4 my-2 space-y-1" {...props} />,
-                          ol: ({node, ...props}) => <ol className="list-decimal pl-4 my-2 space-y-1" {...props} />,
-                          strong: ({node, ...props}) => <span className="font-bold text-stone-900" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                          thead: ({ node, ...props }) => <thead className="bg-stone-100 text-stone-700 font-semibold" {...props} />,
+                          tbody: ({ node, ...props }) => <tbody className="divide-y divide-stone-100" {...props} />,
+                          tr: ({ node, ...props }) => <tr className="hover:bg-stone-50/50 transition-colors" {...props} />,
+                          th: ({ node, ...props }) => <th className="px-3 py-2 text-left whitespace-nowrap" {...props} />,
+                          td: ({ node, ...props }) => <td className="px-3 py-2 align-top" {...props} />,
+                          ul: ({ node, ...props }) => <ul className="list-disc pl-4 my-2 space-y-1" {...props} />,
+                          ol: ({ node, ...props }) => <ol className="list-decimal pl-4 my-2 space-y-1" {...props} />,
+                          strong: ({ node, ...props }) => <span className="font-bold text-stone-900" {...props} />,
+                          p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                          a: ({ node, href, children, ...props }) => {
+                            // Handle internal product links
+                            if (href && href.startsWith('/product/')) {
+                              return (
+                                <button
+                                  onClick={() => {
+                                    setIsOpen(false);
+                                    navigate(href);
+                                  }}
+                                  className="text-amber-700 hover:text-amber-800 underline font-medium cursor-pointer"
+                                >
+                                  {children}
+                                </button>
+                              );
+                            }
+                            return <a href={href} className="text-amber-700 hover:text-amber-800 underline" target="_blank" rel="noopener noreferrer" {...props}>{children}</a>;
+                          },
                         }}
                       >
                         {msg.text}
@@ -144,7 +163,7 @@ export default function ChatWidget() {
                 </div>
               </div>
             ))}
-            
+
             {isLoading && (
               <div className="flex justify-start animate-in fade-in">
                 <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-2">
@@ -156,7 +175,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Footer Input */}
-          <div className="p-3 bg-white border-t border-stone-100 shrink-0 pb-safe"> 
+          <div className="p-3 bg-white border-t border-stone-100 shrink-0 pb-safe">
             {/* 'pb-safe' berguna untuk iPhone dengan home bar */}
             <div className="flex w-full gap-2 items-end">
               <Input
@@ -167,9 +186,9 @@ export default function ChatWidget() {
                 className="flex-1 focus-visible:ring-stone-900 bg-stone-50 border-stone-200 min-h-[44px]"
                 disabled={isLoading}
               />
-              <Button 
-                size="icon" 
-                onClick={handleSend} 
+              <Button
+                size="icon"
+                onClick={handleSend}
                 disabled={isLoading}
                 className="bg-stone-900 hover:bg-stone-800 h-11 w-11 shrink-0 rounded-lg transition-transform active:scale-95"
               >
